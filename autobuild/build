@@ -575,7 +575,7 @@ EOF
 }
 
 host_gtk2() {
-    mkdir -p "$BLDDIR/build/gtk2"
+    mkdir -p "$BLDDIR/build/host-gtk2"
 
     abinfo "Unpacking gtk2 ..."
     dpkg-source -x "$SRCDIR/gtk+2.0_"*.dsc "$BLDDIR/src/gtk2"
@@ -590,7 +590,7 @@ host_gtk2() {
         "$BLDDIR/src/gtk2" \
         "gtk2"
 
-    pushd "$BLDDIR/build/gtk2"
+    pushd "$BLDDIR/build/host-gtk2"
     local dbg_map="-fdebug-prefix-map=$BLDDIR/src/gtk2=."
 
     abinfo "Configuring host gtk2 ..."
