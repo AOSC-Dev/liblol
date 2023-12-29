@@ -207,9 +207,9 @@ rootsbindir = \${exec_prefix}/sbin
 complocaledir = /usr/lib/locale
 localtime-file = /etc/localtime
 
-CFLAGS = -pipe -O2 -g -fdebug-prefix-map=$BLDDIR/src/glibc=.
-ASFLAGS = -pipe -O2 -g -fdebug-prefix-map=$BLDDIR/src/glibc=.
-BUILD_CFLAGS = -O2 -g -fdebug-prefix-map=$BLDDIR/src/glibc=.
+CFLAGS = -pipe -O2 -g -ffile-prefix-map=$BLDDIR=.
+ASFLAGS = -pipe -O2 -g -ffile-prefix-map=$BLDDIR=.
+BUILD_CFLAGS = -O2 -g -ffile-prefix-map=$BLDDIR=.
 LDFLAGS = -Wl,-O1,--sort-common,--as-needed -Wl,-build-id=sha1
 EOF
 
@@ -495,6 +495,7 @@ set_host_build_env() {
             -L$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu \
             -Wl,--rpath-link -Wl,$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu \
             --sysroot=$BLDDIR/build-root \
+            -ffile-prefix-map=$BLDDIR=. \
         "
         "PKG_CONFIG_PATH=$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
         "PKG_CONFIG_SYSROOT_DIR=$BLDDIR/build-root"
@@ -503,8 +504,12 @@ set_host_build_env() {
             -L$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu \
             -Wl,--rpath-link -Wl,$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu \
             --sysroot=$BLDDIR/build-root \
+            -ffile-prefix-map=$BLDDIR=. \
         "
-        "ASFLAGS=-pipe -O2 -g"
+        "ASFLAGS=\
+            -pipe -O2 -g \
+            -ffile-prefix-map=$BLDDIR=. \
+        "
         "PKG_CONFIG=pkg-config"
     )
 }
@@ -552,33 +557,28 @@ cpu_family = 'loongarch64'
 cpu = 'loongarch64'
 endian = 'little'
 EOF
-    local dbg_map="-ffile-prefix-map=$BLDDIR/src/gdk-pixbuf=."
 
     abinfo "Configuring host gdk-pixbuf ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
-        "BLD_DBGMAP=$dbg_map" \
-        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
-            meson setup "$BLDDIR/src/gdk-pixbuf" \
-                --wrap-mode=nodownload \
-                --buildtype=plain \
-                --prefix="$LOLPREFIX" \
-                --sysconfdir=/etc \
-                --localstatedir=/var \
-                --libdir="lib/$OWTARGET" \
-                --cross-file cross-file.txt \
-                -Dpython.bytecompile=-1 \
-                -Dman=false \
-                -Dauto_features=enabled \
-                -Dinstalled_tests=false \
-                -Dgir=false
+        meson setup "$BLDDIR/src/gdk-pixbuf" \
+            --wrap-mode=nodownload \
+            --buildtype=plain \
+            --prefix="$LOLPREFIX" \
+            --sysconfdir=/etc \
+            --localstatedir=/var \
+            --libdir="lib/$OWTARGET" \
+            --cross-file cross-file.txt \
+            -Dpython.bytecompile=-1 \
+            -Dman=false \
+            -Dauto_features=enabled \
+            -Dinstalled_tests=false \
+            -Dgir=false
 
     abinfo "Building host gdk-pixbuf ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
-        "BLD_DBGMAP=$dbg_map" \
-        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
-            meson compile -v \
-                gdk-pixbuf/gdk_pixbuf-2.0:shared_library \
-                gdk-pixbuf/gdk-pixbuf-query-loaders:executable
+        meson compile -v \
+            gdk-pixbuf/gdk_pixbuf-2.0:shared_library \
+            gdk-pixbuf/gdk-pixbuf-query-loaders:executable
 
     abinfo "Installing host gdk-pixbuf ..."
     install_host_shlib "gdk-pixbuf/libgdk_pixbuf-2.0.so.0"
@@ -608,23 +608,20 @@ host_gtk2() {
         "gtk2"
 
     pushd "$BLDDIR/build/host-gtk2"
-    local dbg_map="-ffile-prefix-map=$BLDDIR/src/gtk2=."
 
     abinfo "Configuring host gtk2 ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
-        "BLD_DBGMAP=$dbg_map" \
-        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
-            "$BLDDIR/src/gtk2/configure" \
-                --host="$OWTARGET" \
-                --prefix="$LOLPREFIX" \
-                --libdir="$LOLPREFIX/lib/$OWTARGET" \
-                --sysconfdir=/etc \
-                --enable-test-print-backend \
-                --with-xinput=yes \
-                --enable-shared \
-                --enable-introspection \
-                --disable-static \
-                --disable-man
+        "$BLDDIR/src/gtk2/configure" \
+            --host="$OWTARGET" \
+            --prefix="$LOLPREFIX" \
+            --libdir="$LOLPREFIX/lib/$OWTARGET" \
+            --sysconfdir=/etc \
+            --enable-test-print-backend \
+            --with-xinput=yes \
+            --enable-shared \
+            --enable-introspection \
+            --disable-static \
+            --disable-man
 
     abinfo "Building host gtk2 ..."
 
@@ -639,9 +636,7 @@ libdir='$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu'
 EOF
 
     env -i "${HOST_BUILD_ENVS[@]}" "MAKEFLAGS=$MAKEFLAGS" \
-        "BLD_DBGMAP=$dbg_map" \
-        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
-            make -C gtk libgtk-x11-2.0.la
+        make -C gtk libgtk-x11-2.0.la
 
     abinfo "Installing host gtk2 ..."
     install_host_shlib "gtk/.libs/libgtk-x11-2.0.so.0"
@@ -662,28 +657,25 @@ host_gtk3() {
         "$BLDDIR/src/gtk3/build-aux/"
 
     pushd "$BLDDIR/build/host-gtk3"
-    local dbg_map="-ffile-prefix-map=$BLDDIR/src/gtk3=."
 
     abinfo "Configuring host gtk3 ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
-        "BLD_DBGMAP=$dbg_map" \
-        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
-            "$BLDDIR/src/gtk3/configure" \
-                --host="$OWTARGET" \
-                --prefix="$LOLPREFIX" \
-                --libdir="$LOLPREFIX/lib/$OWTARGET" \
-                --libexecdir="$LOLPREFIX/libexec" \
-                --sysconfdir=/etc \
-                --enable-test-print-backend \
-                --enable-broadway-backend \
-                --enable-x11-backend \
-                --enable-wayland-backend \
-                --enable-shared \
-                --enable-introspection \
-                --enable-cloudprint \
-                --disable-static \
-                --disable-man \
-                CUPS_CONFIG="$BLDDIR/build-root/usr/bin/cups-config"
+        "$BLDDIR/src/gtk3/configure" \
+            --host="$OWTARGET" \
+            --prefix="$LOLPREFIX" \
+            --libdir="$LOLPREFIX/lib/$OWTARGET" \
+            --libexecdir="$LOLPREFIX/libexec" \
+            --sysconfdir=/etc \
+            --enable-test-print-backend \
+            --enable-broadway-backend \
+            --enable-x11-backend \
+            --enable-wayland-backend \
+            --enable-shared \
+            --enable-introspection \
+            --enable-cloudprint \
+            --disable-static \
+            --disable-man \
+            CUPS_CONFIG="$BLDDIR/build-root/usr/bin/cups-config"
 
     abinfo "Building host gtk3 ..."
     # Fill in a dummy libgdk-3.la to make the build happy
@@ -696,10 +688,8 @@ library_names='libgdk-3.so.0'
 libdir='$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu'
 EOF
     env -i "${HOST_BUILD_ENVS[@]}" "MAKEFLAGS=$MAKEFLAGS" \
-        "BLD_DBGMAP=$dbg_map" \
         bash -c '
             set -e -o pipefail
-            export CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP"
             make -C gtk gtkdbusgenerated.h V=1
             make -C gtk libgtk-3.la V=1
         '
@@ -736,38 +726,33 @@ cpu_family = 'loongarch64'
 cpu = 'loongarch64'
 endian = 'little'
 EOF
-    local dbg_map="-ffile-prefix-map=$BLDDIR/src/glib2=."
 
     abinfo "Configuring host glib2 ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
-        "BLD_DBGMAP=$dbg_map" \
-        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
-            meson setup "$BLDDIR/src/glib2" \
-                --wrap-mode=nodownload \
-                --buildtype=plain \
-                --prefix="$LOLPREFIX" \
-                --sysconfdir=/etc \
-                --localstatedir=/var \
-                --libdir="lib/$OWTARGET" \
-                --libexecdir=lib/glib2.0 \
-                -Dinternal_pcre=false \
-                --default-library shared \
-                -Dgtk_doc=false \
-                -Dinstalled_tests=false \
-                -Dman=false \
-                -Dfam=false \
-                -Dlibmount=true \
-                -Dselinux=true \
-                -Dsystemtap=true \
-                -Dxattr=true \
-                --cross-file cross-file.txt
+        meson setup "$BLDDIR/src/glib2" \
+            --wrap-mode=nodownload \
+            --buildtype=plain \
+            --prefix="$LOLPREFIX" \
+            --sysconfdir=/etc \
+            --localstatedir=/var \
+            --libdir="lib/$OWTARGET" \
+            --libexecdir=lib/glib2.0 \
+            -Dinternal_pcre=false \
+            --default-library shared \
+            -Dgtk_doc=false \
+            -Dinstalled_tests=false \
+            -Dman=false \
+            -Dfam=false \
+            -Dlibmount=true \
+            -Dselinux=true \
+            -Dsystemtap=true \
+            -Dxattr=true \
+            --cross-file cross-file.txt
 
     abinfo "Building host glib2 ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
-        "BLD_DBGMAP=$dbg_map" \
-        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
-            meson compile -v \
-                gio/gio-2.0:shared_library
+        meson compile -v \
+            gio/gio-2.0:shared_library
 
     abinfo "Installing host glib2 ..."
     install_host_shlib "gio/libgio-2.0.so.0"
