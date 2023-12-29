@@ -251,6 +251,21 @@ EOF
     [ -x "$PKGDIR$LOLPREFIX/lib/$OWTARGET/ld-$GLIBC_VER.so" ]
 }
 
+patch_elf_rpath() {
+    local lib=$1
+    local newrpath=$2
+    abinfo "Patching $lib ..."
+    patchelf \
+        --debug \
+        --page-size "$((16 * 1024))" \
+        --set-rpath "$newrpath" \
+        "$PKGDIR$LOLPREFIX/lib/$OWTARGET/$lib"
+    local newpath=$(patchelf --print-rpath "$PKGDIR$LOLPREFIX/lib/$OWTARGET/$lib")
+    if [ "$newrpath" != "$newpath" ]; then
+        abdie "Patch $lib unsuccessful"
+    fi
+}
+
 install_additional_libs() {
     abinfo "Extracting extra runtime components ..."
     mkdir -pv "$BLDDIR/unpack/add_libs"
@@ -285,16 +300,7 @@ install_additional_libs() {
     sed 's@/usr/lib/loongarch64-linux-gnu@'"$LOLPREFIX/lib/$OWTARGET"'@' "$BLDDIR/unpack/add_libs/usr/share/gpudriverpath/gsgpu_path.conf" \
         > "$PKGDIR/usr/share/gpudriverpath/gsgpu_path.conf"
 
-    abinfo "Patching libpulse.so.0 ..."
-    patchelf \
-        --debug \
-        --page-size "$((16 * 1024))" \
-        --set-rpath "$LOLPREFIX/lib/$OWTARGET/pulseaudio" \
-        "$PKGDIR$LOLPREFIX/lib/$OWTARGET/libpulse.so.0"
-    local newpath=$(patchelf --print-rpath "$PKGDIR$LOLPREFIX/lib/$OWTARGET/libpulse.so.0")
-    if [ "$LOLPREFIX/lib/$OWTARGET/pulseaudio" != "$newpath" ]; then
-        abdie "Patch libpulse.so.0 unsuccessful"
-    fi
+    patch_elf_rpath "libpulse.so.0" "$LOLPREFIX/lib/$OWTARGET/pulseaudio"
 
     "$BLDDIR/build/glibc-build/elf/ldconfig" \
         -v \
