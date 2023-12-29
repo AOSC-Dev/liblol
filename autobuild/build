@@ -540,7 +540,7 @@ cpu_family = 'loongarch64'
 cpu = 'loongarch64'
 endian = 'little'
 EOF
-    local dbg_map="-fdebug-prefix-map=$BLDDIR/src/gdk-pixbuf=."
+    local dbg_map="-ffile-prefix-map=$BLDDIR/src/gdk-pixbuf=."
 
     abinfo "Configuring host gdk-pixbuf ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
@@ -596,7 +596,7 @@ host_gtk2() {
         "gtk2"
 
     pushd "$BLDDIR/build/host-gtk2"
-    local dbg_map="-fdebug-prefix-map=$BLDDIR/src/gtk2=."
+    local dbg_map="-ffile-prefix-map=$BLDDIR/src/gtk2=."
 
     abinfo "Configuring host gtk2 ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
@@ -650,7 +650,7 @@ host_gtk3() {
         "$BLDDIR/src/gtk3/build-aux/"
 
     pushd "$BLDDIR/build/host-gtk3"
-    local dbg_map="-fdebug-prefix-map=$BLDDIR/src/gtk3=."
+    local dbg_map="-ffile-prefix-map=$BLDDIR/src/gtk3=."
 
     abinfo "Configuring host gtk3 ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
