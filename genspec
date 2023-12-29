@@ -6,7 +6,10 @@ set -e -o pipefail
 
 sed -i '/deb-src/s/#//' /etc/apt/sources.list
 apt-get update
-apt-get install --no-install-recommends -y libgdk-pixbuf2.0-bin libgtk2.0-0
+apt-get install --no-install-recommends -y \
+    libgdk-pixbuf2.0-bin \
+    libgtk2.0-0 \
+    libgtk-3-0
 
 exec 3> spec.new
 
@@ -112,3 +115,4 @@ gen_def_cache(){
 
 gen_def_cache "/usr/lib/loongarch64-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders" "gdk-pixbuf-query-loaders"
 HOME='~' gen_def_cache "/usr/lib/loongarch64-linux-gnu/libgtk2.0-0/gtk-query-immodules-2.0" "gtk2-immodules"
+gen_def_cache "/usr/lib/loongarch64-linux-gnu/libgtk-3-0/gtk-query-immodules-3.0" "gtk3-immodules"

@@ -13,3 +13,9 @@ if [ -d "@prefix@/lib/@target@/gtk-2.0/2.10.0/immodules" ]; then
     rm -f "@prefix@/lib/@target@/gtk-2.0/2.10.0/immodules.cache"
     rmdir -p --ignore-fail-on-non-empty "@prefix@/lib/@target@/gtk-2.0/2.10.0/immodules"
 fi
+
+if [ -d "@prefix@/lib/@target@/gtk-3.0/3.0.0/immodules" ]; then
+    # Purge the cache
+    rm -f "@prefix@/lib/@target@/gtk-3.0/3.0.0/immodules.cache"
+    rmdir -p --ignore-fail-on-non-empty "@prefix@/lib/@target@/gtk-3.0/3.0.0/immodules"
+fi

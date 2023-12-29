@@ -29,3 +29,17 @@ if [ -d "$GTK2_IM_DIR" ]; then
         echo "Please run '$GTK2_IM_UPDATER --update-cache' manually after loading" >&2
     fi
 fi
+
+GTK3_IM_DIR=@prefix@/lib/@target@/gtk-3.0/3.0.0/immodules
+GTK3_IM_UPDATER=@prefix@/lib/@target@/libgtk-3-0/gtk-query-immodules-3.0
+
+if [ -d "$GTK3_IM_DIR" ]; then
+    echo "Updating gtk3 immodules cache..." >&2
+    if ! "$GTK3_IM_UPDATER" --update-cache; then
+        echo "Failed to update gtk3 immodules cache." >&2
+        echo "It might be caused by not loading the old world compatibility module." >&2
+        cp -f "/usr/share/liblol/gtk3-immodules.cache.default" "@prefix@/lib/@target@/gtk-3.0/3.0.0/immodules.cache"
+        echo "I have copied the default cache file" >&2
+        echo "Please run '$GTK3_IM_UPDATER --update-cache' manually after loading" >&2
+    fi
+fi
