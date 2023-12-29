@@ -248,4 +248,5 @@ x11proto-xf86vidmode-dev:dev
 x11proto-xinerama-dev:dev
 xtrans-dev:dev
 gdk-pixbuf:src
+librsvg2-common
 gtk+2.0:src

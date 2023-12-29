@@ -1618,6 +1618,14 @@ CHKSUMS="$CHKSUMS sha256::b02a8ddb0a1f1998bfb3333c3e145e2d9e794f45e633c2de114084
 sha256::9d8666f01bfb31df1168e50d08d5646d18884ed674058b8b216397a85eac922b \
 sha256::1babfef11aae9d0af019f51514aa752caf27276f1dd08af11270ba08d7d6656c \
 "
+SRCS="$SRCS file::rename=dist_librsvg2-common.deb::${_mirror}/pool/main/libr/librsvg/librsvg2-common_2.44.10-2.1.lnd.3_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::48cc0513884ea25712b1ea5d51ad37fbbdc6b2a06ec71cd4adfe231180bc7ee1 \
+"
+SRCS="$SRCS file::rename=dist_librsvg2-common-dbgsym.deb::${_mirror}/pool/main/libr/librsvg/librsvg2-common-dbgsym_2.44.10-2.1.lnd.3_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::2015e1a7c4641bc09b8128d81abe7b5ca7d4bc4a7ad6235e6ff19dbb38efcd4c \
+"
 SRCS="$SRCS file::rename=gtk+2.0_2.24.32-3.1.dsc::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32-3.1.dsc \
 file::rename=gtk+2.0_2.24.32.orig.tar.xz::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32.orig.tar.xz \
 file::rename=gtk+2.0_2.24.32-3.1.debian.tar.xz::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32-3.1.debian.tar.xz \
