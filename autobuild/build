@@ -559,7 +559,9 @@ EOF
     env -i "${HOST_BUILD_ENVS[@]}" \
         "BLD_DBGMAP=$dbg_map" \
         bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
-            ninja -v
+            meson compile -v \
+                gdk-pixbuf/gdk_pixbuf-2.0:shared_library \
+                gdk-pixbuf/gdk-pixbuf-query-loaders:executable
 
     abinfo "Installing host gdk-pixbuf ..."
     install_host_shlib "gdk-pixbuf/libgdk_pixbuf-2.0.so.0"
