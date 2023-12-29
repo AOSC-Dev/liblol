@@ -2,7 +2,7 @@
 # Automatically generated file, do not edit
 # Created by @libdir@/libgtk-3-0/gtk-query-immodules-3.0 from gtk+-3.24.5
 #
-# ModulesPath = @libdir@/gtk-3.0/3.0.0/loongarch64-unknown-linux-gnu/immodules:/usr/lib/loongarch64-linux-gnu/gtk-3.0/3.0.0/immodules:/usr/lib/loongarch64-linux-gnu/gtk-3.0/loongarch64-unknown-linux-gnu/immodules:/usr/lib/loongarch64-linux-gnu/gtk-3.0/immodules
+# ModulesPath = @libdir@/gtk-3.0/3.0.0/loongarch64-unknown-linux-gnu/immodules:@libdir@/gtk-3.0/3.0.0/immodules:@libdir@/gtk-3.0/loongarch64-unknown-linux-gnu/immodules:@libdir@/gtk-3.0/immodules
 #
 "@libdir@/gtk-3.0/3.0.0/immodules/im-am-et.so" 
 "am_et" "Amharic (EZ+)" "gtk30" "/usr/share/locale" "am" 

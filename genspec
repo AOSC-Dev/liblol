@@ -108,7 +108,7 @@ gen_def_cache(){
     local cache_name="$2"
 
     exec 3> "autobuild/additional-files/$cache_name.cache.in.new"
-    "$generator" | sed "s#/usr/lib/loongarch64-linux-gnu#@libdir@#" >&3
+    "$generator" | sed "s#/usr/lib/loongarch64-linux-gnu#@libdir@#g" >&3
     exec 3>&-
     mv "autobuild/additional-files/$cache_name.cache.in.new" "autobuild/additional-files/$cache_name.cache.in"
 }
