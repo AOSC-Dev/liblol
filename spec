@@ -1626,6 +1626,70 @@ SRCS="$SRCS file::rename=dist_librsvg2-common-dbgsym.deb::${_mirror}/pool/main/l
 "
 CHKSUMS="$CHKSUMS sha256::2015e1a7c4641bc09b8128d81abe7b5ca7d4bc4a7ad6235e6ff19dbb38efcd4c \
 "
+SRCS="$SRCS file::rename=dist_librsvg2-2.deb::${_mirror}/pool/main/libr/librsvg/librsvg2-2_2.44.10-2.1.lnd.3_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::3c29485a2c6f045cb3eac50227116f6fd70bd5a89a8f0a9e3c04b7451a928d14 \
+"
+SRCS="$SRCS file::rename=dist_librsvg2-2-dbgsym.deb::${_mirror}/pool/main/libr/librsvg/librsvg2-2-dbgsym_2.44.10-2.1.lnd.3_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::0423f3e116992c536f56ac407c654e5c401304e63b29e6e8ab15ebee7a6665d4 \
+"
+SRCS="$SRCS file::rename=dist_libicu63.deb::${_mirror}/pool/main/i/icu/libicu63_63.1-6+deb10u1.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::92f3128e63fbd6894344265e29c78308799d75ecd59d0225e8f3e3657777aabb \
+"
+SRCS="$SRCS file::rename=dist_libicu63-dbgsym.deb::${_mirror}/pool/main/i/icu/libicu63-dbgsym_63.1-6+deb10u1.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::2a9680edcd12abc575affeb11b91e00d45ca008802549b5f5296e97f9df677f8 \
+"
+SRCS="$SRCS file::rename=dist_libcroco3.deb::${_mirror}/pool/main/libc/libcroco/libcroco3_0.6.12-3.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::2bb711fd071b614532a4ce0c52a02e79f261426f8b0a68b56e760f6c7521dd39 \
+"
+SRCS="$SRCS file::rename=dist_libcroco3-dbgsym.deb::${_mirror}/pool/main/libc/libcroco/libcroco3-dbgsym_0.6.12-3.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::6f2c9e2bc56d374855801c8782c64902bab8956d300b93a80ee97ba2e4ebc25c \
+"
+SRCS="$SRCS file::rename=dist_dconf-gsettings-backend.deb::${_mirror}/pool/main/d/dconf/dconf-gsettings-backend_0.30.1-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::b3d6919b5a2200f0887ce7e68396a13a190f945b6ea9f3f91d86b968f53d03a7 \
+"
+SRCS="$SRCS file::rename=dist_dconf-gsettings-backend-dbgsym.deb::${_mirror}/pool/main/d/dconf/dconf-gsettings-backend-dbgsym_0.30.1-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::3ea8020323077029140074b929de08b4a24fa7b19bbdb6701a9697805e7bbc36 \
+"
+SRCS="$SRCS file::rename=dist_gvfs.deb::${_mirror}/pool/main/g/gvfs/gvfs_1.38.1-5.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::78f8abb87f30904cd4e14ba743b6986496bd1bc54bd7bb32892e896080ee3e6b \
+"
+SRCS="$SRCS file::rename=dist_gvfs-dbgsym.deb::${_mirror}/pool/main/g/gvfs/gvfs-dbgsym_1.38.1-5.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::37d89b63266d9f024cd3e53ef8cb9cc5dfba1e0e2cf3c3d50c6052e9fca78e41 \
+"
+SRCS="$SRCS file::rename=dist_glib-networking.deb::${_mirror}/pool/main/g/glib-networking/glib-networking_2.58.0-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::1f78cdc18a67cf12d7dda4b290f8516d97ce2b568e0822db0fcc746ce7ac2e04 \
+"
+SRCS="$SRCS file::rename=dist_glib-networking-dbgsym.deb::${_mirror}/pool/main/g/glib-networking/glib-networking-dbgsym_2.58.0-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::878f264459f9dd07553eff4dafbce022be26f21bc7bcb14ae1f6f7bf909809c7 \
+"
+SRCS="$SRCS file::rename=dist_libproxy1v5.deb::${_mirror}/pool/main/libp/libproxy/libproxy1v5_0.4.15-5.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::8dea403c71e9dbfaaac0b4883477e92daf44194fa361208294e0b628505323e2 \
+"
+SRCS="$SRCS file::rename=dist_libproxy1v5-dbgsym.deb::${_mirror}/pool/main/libp/libproxy/libproxy1v5-dbgsym_0.4.15-5.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::50efc7ba14e384ff5fc007cf7426addaa4bd909fe0563f48236ab91d7f8a3df4 \
+"
+SRCS="$SRCS file::rename=dist_gvfs-libs.deb::${_mirror}/pool/main/g/gvfs/gvfs-libs_1.38.1-5.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::e54e6beee568a8187230a5b1e865dc13d6fb121e1981268591ea5b67bdafb390 \
+"
+SRCS="$SRCS file::rename=dist_gvfs-libs-dbgsym.deb::${_mirror}/pool/main/g/gvfs/gvfs-libs-dbgsym_1.38.1-5.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::6d6972ca801eb34f6e08644596e5ac0c6ef39a0e88f332583a5554c2fe153101 \
+"
 SRCS="$SRCS file::rename=gtk+2.0_2.24.32-3.1.dsc::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32-3.1.dsc \
 file::rename=gtk+2.0_2.24.32.orig.tar.xz::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32.orig.tar.xz \
 file::rename=gtk+2.0_2.24.32-3.1.debian.tar.xz::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32-3.1.debian.tar.xz \
@@ -1633,4 +1697,12 @@ file::rename=gtk+2.0_2.24.32-3.1.debian.tar.xz::${_mirror}/pool/main/g/gtk+2.0/g
 CHKSUMS="$CHKSUMS sha256::1bb83986ce29405da8d1a06548f694915fd321429793568e4c0ef11b65bc2c5d \
 sha256::b6c8a93ddda5eabe3bfee1eb39636c9a03d2a56c7b62828b359bf197943c582e \
 sha256::6ce5f2b093e87aa5944cd2d43352587f661e279edd5f22288e5b992f5706f60a \
+"
+SRCS="$SRCS file::rename=glib2.0_2.58.3-2+deb10u2.1.dsc::${_mirror}/pool/main/g/glib2.0/glib2.0_2.58.3-2+deb10u2.1.dsc \
+file::rename=glib2.0_2.58.3.orig.tar.xz::${_mirror}/pool/main/g/glib2.0/glib2.0_2.58.3.orig.tar.xz \
+file::rename=glib2.0_2.58.3-2+deb10u2.1.debian.tar.xz::${_mirror}/pool/main/g/glib2.0/glib2.0_2.58.3-2+deb10u2.1.debian.tar.xz \
+"
+CHKSUMS="$CHKSUMS sha256::52363386e9abda754ae579adb8d3630c702f1777d79219ec2325d90b66bb927f \
+sha256::8f43c31767e88a25da72b52a40f3301fefc49a665b56dc10ee7cc9565cbe7481 \
+sha256::81a47ce102148fc6763dba81c37e5b1d5c010eceaf4015ad85bc7b595770d884 \
 "

@@ -1,0 +1,25 @@
+From ad70938c625e4503114d5ba6e8b3be63ed969333 Mon Sep 17 00:00:00 2001
+From: Miao Wang <shankerwangmiao@gmail.com>
+Date: Sat, 30 Dec 2023 07:39:55 +0800
+Subject: [PATCH 3/3] Revert debian patch 90_gio-modules-multiarch-compat.patch
+
+---
+ gio/giomodule.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/gio/giomodule.c b/gio/giomodule.c
+index 9f5f6ef..36c0cef 100644
+--- a/gio/giomodule.c
++++ b/gio/giomodule.c
+@@ -1149,9 +1149,6 @@ _g_io_modules_ensure_loaded (void)
+
+       g_io_module_scope_free (scope);
+
+-      /* Hard-coded fallback directory for pre-multiarch compatibility */
+-      g_io_modules_scan_all_in_directory ("/usr/lib/gio/modules");
+-
+       /* Initialize types from built-in "modules" */
+       g_type_ensure (g_null_settings_backend_get_type ());
+       g_type_ensure (g_memory_settings_backend_get_type ());
+--
+2.39.1

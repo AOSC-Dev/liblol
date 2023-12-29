@@ -10,6 +10,7 @@ fi
 
 rm -f "@prefix@/lib/@target@/gtk-2.0/2.10.0/immodules.cache"
 rm -f "@prefix@/lib/@target@/gtk-3.0/3.0.0/immodules.cache"
+rm -f "@prefix@/lib/@target@/gio/modules/giomodule.cache"
 
 if [ -d "@prefix@/lib/@target@/gtk-2.0/2.10.0" ]; then
     rmdir -p --ignore-fail-on-non-empty "@prefix@/lib/@target@/gtk-2.0/2.10.0"
@@ -17,4 +18,8 @@ fi
 
 if [ -d "@prefix@/lib/@target@/gtk-3.0/3.0.0" ]; then
     rmdir -p --ignore-fail-on-non-empty "@prefix@/lib/@target@/gtk-3.0/3.0.0"
+fi
+
+if [ -d "@prefix@/lib/@target@/gio/modules" ]; then
+    rmdir -p --ignore-fail-on-non-empty "@prefix@/lib/@target@/gio/modules"
 fi

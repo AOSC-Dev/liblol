@@ -301,6 +301,12 @@ install_additional_libs() {
         > "$PKGDIR/usr/share/gpudriverpath/gsgpu_path.conf"
 
     patch_elf_rpath "libpulse.so.0" "$LOLPREFIX/lib/$OWTARGET/pulseaudio"
+    patch_elf_rpath "gio/modules/libgioremote-volume-monitor.so" "$LOLPREFIX/lib/$OWTARGET/gvfs"
+    patch_elf_rpath "gio/modules/libgvfsdbus.so" "$LOLPREFIX/lib/$OWTARGET/gvfs"
+
+    abinfo "Removing unnecessary glib2 files ..."
+    rm -vf "$PKGDIR$LOLPREFIX/lib/$OWTARGET/glib-2.0/gio-launch-desktop"
+    rm -vf "$PKGDIR$LOLPREFIX/lib/$OWTARGET/glib-2.0/glib-compile-schemas"
 
     "$BLDDIR/build/glibc-build/elf/ldconfig" \
         -v \
@@ -705,6 +711,72 @@ EOF
     popd
 }
 
+host_glib2() {
+    mkdir -p "$BLDDIR/build/host-glib2"
+
+    abinfo "Unpacking glib2 ..."
+    dpkg-source -x "$SRCDIR/glib2.0"*.dsc "$BLDDIR/src/glib2"
+
+    apply_source_patch_series \
+        "$SRCDIR/autobuild/patches/glib2" \
+        "$BLDDIR/src/glib2" \
+        "glib2"
+
+    pushd "$BLDDIR/build/host-glib2"
+    cat > cross-file.txt << EOF
+[binaries]
+c = '${OWTARGET}-gcc'
+cpp = '${OWTARGET}g++'
+ar = '${OWTARGET}-ar'
+strip = '${OWTARGET}-strip'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'loongarch64'
+cpu = 'loongarch64'
+endian = 'little'
+EOF
+    local dbg_map="-ffile-prefix-map=$BLDDIR/src/glib2=."
+
+    abinfo "Configuring host glib2 ..."
+    env -i "${HOST_BUILD_ENVS[@]}" \
+        "BLD_DBGMAP=$dbg_map" \
+        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
+            meson setup "$BLDDIR/src/glib2" \
+                --wrap-mode=nodownload \
+                --buildtype=plain \
+                --prefix="$LOLPREFIX" \
+                --sysconfdir=/etc \
+                --localstatedir=/var \
+                --libdir="lib/$OWTARGET" \
+                --libexecdir=lib/glib2.0 \
+                -Dinternal_pcre=false \
+                --default-library shared \
+                -Dgtk_doc=false \
+                -Dinstalled_tests=false \
+                -Dman=false \
+                -Dfam=false \
+                -Dlibmount=true \
+                -Dselinux=true \
+                -Dsystemtap=true \
+                -Dxattr=true \
+                --cross-file cross-file.txt
+
+    abinfo "Building host glib2 ..."
+    env -i "${HOST_BUILD_ENVS[@]}" \
+        "BLD_DBGMAP=$dbg_map" \
+        bash -c 'CFLAGS="$CFLAGS $BLD_DBGMAP" ASFLAGS="$ASFLAGS $BLD_DBGMAP" exec "$0" "$@"' \
+            meson compile -v \
+                gio/gio-2.0:shared_library
+
+    abinfo "Installing host glib2 ..."
+    install_host_shlib "gio/libgio-2.0.so.0"
+
+    install_host_cache_default "giomodule.cache" "glib2"
+
+    popd
+}
+
 install_hooks() {
     for i in postinst postrm; do
         sed 's#@prefix@#'"$LOLPREFIX"'#g; s#@target@#'"$OWTARGET"'#g' \
@@ -748,6 +820,9 @@ host_gtk2
 
 abinfo "Building host gtk3"
 host_gtk3
+
+abinfo "Building host glib2"
+host_glib2
 
 abinfo "Install additional runtime libraries ..."
 install_additional_libs

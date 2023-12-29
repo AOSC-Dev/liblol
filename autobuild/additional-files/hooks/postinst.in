@@ -43,3 +43,17 @@ if [ -d "$GTK3_IM_DIR" ]; then
         echo "Please run '$GTK3_IM_UPDATER --update-cache' manually after loading" >&2
     fi
 fi
+
+GIO_MOD_DIR=@prefix@/lib/@target@/gio/modules
+GIO_MOD_UPDATER=@prefix@/lib/@target@/glib-2.0/gio-querymodules
+
+if [ -d "$GIO_MOD_DIR" ]; then
+    echo "Updating gio modules cache..." >&2
+    if ! "$GIO_MOD_UPDATER" "$GIO_MOD_DIR"; then
+        echo "Failed to update gio modules cache." >&2
+        echo "It might be caused by not loading the old world compatibility module." >&2
+        cp -f "/usr/share/liblol/giomodule.cache.default" "@prefix@/lib/@target@/gio/modules/giomodule.cache"
+        echo "I have copied the default cache file" >&2
+        echo "Please run '$GIO_MOD_UPDATER $GIO_MOD_DIR' manually after loading" >&2
+    fi
+fi

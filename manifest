@@ -249,4 +249,13 @@ x11proto-xinerama-dev:dev
 xtrans-dev:dev
 gdk-pixbuf:src
 librsvg2-common
+librsvg2-2
+libicu63
+libcroco3
+dconf-gsettings-backend
+gvfs
+glib-networking
+libproxy1v5
+gvfs-libs
 gtk+2.0:src
+glib2.0:src

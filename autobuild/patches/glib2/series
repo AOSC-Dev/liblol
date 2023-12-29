@@ -1,0 +1,3 @@
+0001-remove-c-dependency.patch
+0002-gdesktopappinfo-Use-sh-rather-than-gio-launch-deskto.patch
+0003-Revert-debian-patch-90_gio-modules-multiarch-compat..patch

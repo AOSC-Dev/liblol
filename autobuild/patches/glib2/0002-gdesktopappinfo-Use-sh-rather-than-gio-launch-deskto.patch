@@ -1,0 +1,191 @@
+From 6192d9ec7ff5d3e9af607f21ac6d2e06343c9191 Mon Sep 17 00:00:00 2001
+From: Philip Withnall <withnall@endlessm.com>
+Date: Thu, 13 Feb 2020 10:26:14 +0000
+Subject: [PATCH 2/3] gdesktopappinfo: Use `sh` rather than
+ `gio-launch-desktop`
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There were some problems about where to install `gio-launch-desktop` to
+support multiarch systems without circular dependencies. Simon McVittie
+suggested that, actually, given the current set of platforms supported
+by `GDesktopAppInfo` (they’re all POSIX), we could just use `sh`.
+
+That simplifies things nicely. `gio-launch-desktop` can always be
+resurrected (and the multiarch debate continued and resolved) if needed
+in future.
+
+Signed-off-by: Philip Withnall <withnall@endlessm.com>
+
+Fixes: #1633
+---
+ gio/gdesktopappinfo.c    | 45 +++++++++++++++++++---------------
+ gio/gio-launch-desktop.c | 52 ----------------------------------------
+ gio/meson.build          |  6 -----
+ gio/tests/meson.build    |  1 -
+ 4 files changed, 26 insertions(+), 78 deletions(-)
+ delete mode 100644 gio/gio-launch-desktop.c
+
+diff --git a/gio/gdesktopappinfo.c b/gio/gdesktopappinfo.c
+index 11b245a..c840308 100644
+--- a/gio/gdesktopappinfo.c
++++ b/gio/gdesktopappinfo.c
+@@ -155,7 +155,6 @@ static guint           n_desktop_file_dirs;
+ static const guint     desktop_file_dir_user_config_index = 0;
+ static guint           desktop_file_dir_user_data_index;
+ static GMutex          desktop_file_dir_lock;
+-static const gchar    *gio_launch_desktop_path = NULL;
+
+ /* Monitor 'changed' signal handler {{{2 */
+ static void desktop_file_dir_reset (DesktopFileDir *dir);
+@@ -2675,6 +2674,14 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
+       char *sn_id = NULL;
+       char **wrapped_argv;
+       int i;
++      const gchar * const wrapper_argv[] =
++        {
++          "/bin/sh",
++          "-e",
++          "-u",
++          "-c", "export GIO_LAUNCHED_DESKTOP_FILE_PID=$$; exec \"$@\"",
++          "sh",  /* argv[0] for sh */
++        };
+
+       old_uris = dup_uris;
+       if (!expand_application_parameters (info, exec_line, &dup_uris, &argc, &argv, error))
+@@ -2716,26 +2723,26 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
+           g_list_free_full (launched_files, g_object_unref);
+         }
+
+-      if (g_once_init_enter (&gio_launch_desktop_path))
+-        {
+-          const gchar *tmp;
+-
+-          /* Allow test suite to specify path to gio-launch-desktop */
+-          tmp = g_getenv ("GIO_LAUNCH_DESKTOP");
+-
+-          if (tmp == NULL)
+-            tmp = GIO_LIBDIR "/glib-2.0/gio-launch-desktop";
+-
+-          g_once_init_leave (&gio_launch_desktop_path, tmp);
+-        }
+-
+-      wrapped_argv = g_new (char *, argc + 2);
+-      wrapped_argv[0] = g_strdup (gio_launch_desktop_path);
+-
++      /* Wrap the @argv in a command which will set the
++       * `GIO_LAUNCHED_DESKTOP_FILE_PID` environment variable. We can’t set this
++       * in @envp along with `GIO_LAUNCHED_DESKTOP_FILE` because we need to know
++       * the PID of the new forked process. We can’t use setenv() between fork()
++       * and exec() because we’d rather use posix_spawn() for speed.
++       *
++       * `sh` should be available on all the platforms that `GDesktopAppInfo`
++       * currently supports (since they are all POSIX). If additional platforms
++       * need to be supported in future, it will probably have to be replaced
++       * with a wrapper program (grep the GLib git history for
++       * `gio-launch-desktop` for an example of this which could be
++       * resurrected). */
++      wrapped_argv = g_new (char *, argc + G_N_ELEMENTS (wrapper_argv) + 1);
++
++      for (i = 0; i < G_N_ELEMENTS (wrapper_argv); i++)
++        wrapped_argv[i] = g_strdup (wrapper_argv[i]);
+       for (i = 0; i < argc; i++)
+-        wrapped_argv[i + 1] = g_steal_pointer (&argv[i]);
++        wrapped_argv[i + G_N_ELEMENTS (wrapper_argv)] = g_steal_pointer (&argv[i]);
+
+-      wrapped_argv[i + 1] = NULL;
++      wrapped_argv[i + G_N_ELEMENTS (wrapper_argv)] = NULL;
+       g_free (argv);
+       argv = NULL;
+
+diff --git a/gio/gio-launch-desktop.c b/gio/gio-launch-desktop.c
+deleted file mode 100644
+index 03845df..0000000
+--- a/gio/gio-launch-desktop.c
++++ /dev/null
+@@ -1,52 +0,0 @@
+-/* GIO - GLib Input, Output and Streaming Library
+- *
+- * Copyright (C) 2018 Endless Mobile, Inc.
+- *
+- * This library is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU Lesser General Public
+- * License as published by the Free Software Foundation; either
+- * version 2.1 of the License, or (at your option) any later version.
+- *
+- * This library is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * Lesser General Public License for more details.
+- *
+- * You should have received a copy of the GNU Lesser General
+- * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
+- *
+- * Author: Daniel Drake <drake@endlessm.com>
+- */
+-
+-/*
+- * gio-launch-desktop: GDesktopAppInfo helper
+- * Executable wrapper to set GIO_LAUNCHED_DESKTOP_FILE_PID
+- * There are complications when doing this in a fork()/exec() codepath,
+- * and it cannot otherwise be done with posix_spawn().
+- * This wrapper is designed to be minimal and lightweight.
+- * It does not even link against glib.
+- */
+-
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <sys/types.h>
+-#include <unistd.h>
+-
+-int
+-main (int argc, char *argv[])
+-{
+-  pid_t pid = getpid ();
+-  char buf[50];
+-  int r;
+-
+-  if (argc < 2)
+-    return -1;
+-
+-  r = snprintf (buf, sizeof (buf), "GIO_LAUNCHED_DESKTOP_FILE_PID=%ld", (long) pid);
+-  if (r >= sizeof (buf))
+-    return -1;
+-
+-  putenv (buf);
+-
+-  return execvp (argv[1], argv + 1);
+-}
+diff --git a/gio/meson.build b/gio/meson.build
+index c3b7b76..86451b2 100644
+--- a/gio/meson.build
++++ b/gio/meson.build
+@@ -421,12 +421,6 @@ if host_system != 'windows'
+     contenttype_sources += files('gcontenttype.c')
+     appinfo_sources += files('gdesktopappinfo.c')
+     gio_unix_include_headers += files('gdesktopappinfo.h')
+-
+-    executable('gio-launch-desktop', 'gio-launch-desktop.c',
+-      install : true,
+-      c_args : gio_c_args,
+-      # intl.lib is not compatible with SAFESEH
+-      link_args : noseh_link_args)
+   endif
+
+   subdir('xdgmime')
+diff --git a/gio/tests/meson.build b/gio/tests/meson.build
+index 2b59198..1118fbd 100644
+--- a/gio/tests/meson.build
++++ b/gio/tests/meson.build
+@@ -93,7 +93,6 @@ test_env = environment()
+ test_env.set('G_TEST_SRCDIR', meson.current_source_dir())
+ test_env.set('G_TEST_BUILDDIR', meson.current_build_dir())
+ test_env.set('GIO_MODULE_DIR', '')
+-test_env.set('GIO_LAUNCH_DESKTOP', meson.build_root() + '/gio/gio-launch-desktop')
+
+ # Check for libdbus1 - Optional - is only used in the GDBus test cases
+ # 1.2.14 required for dbus_message_set_serial
+--
+2.39.1
+
