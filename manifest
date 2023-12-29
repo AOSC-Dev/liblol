@@ -95,7 +95,7 @@ libxrandr2:dev
 libasyncns0
 libcap2
 libflac8
-libgtk2.0-0
+libgtk2.0-0:dev
 libogg0:nodbg
 libogg-dbg:nodbg
 libpulse0

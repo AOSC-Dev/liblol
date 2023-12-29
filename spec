@@ -798,7 +798,7 @@ SRCS="$SRCS file::rename=dist_libflac8-dbgsym.deb::${_mirror}/pool/main/f/flac/l
 "
 CHKSUMS="$CHKSUMS sha256::fef1508d901d3ad22331afa9193dc3d1f100789c40dff32a0d8ed5d989695b47 \
 "
-SRCS="$SRCS file::rename=dist_libgtk2.0-0.deb::${_mirror}/pool/main/g/gtk+2.0/libgtk2.0-0_2.24.32-3.1_loongarch64.deb \
+SRCS="$SRCS file::rename=dist_dev_libgtk2.0-0.deb::${_mirror}/pool/main/g/gtk+2.0/libgtk2.0-0_2.24.32-3.1_loongarch64.deb \
 "
 CHKSUMS="$CHKSUMS sha256::405287989a574fac76c1ac90d816b291099259da0c7ff2865504a396cdb6ead8 \
 "
