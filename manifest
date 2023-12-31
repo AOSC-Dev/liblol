@@ -257,5 +257,12 @@ gvfs
 glib-networking
 libproxy1v5
 gvfs-libs
+ibus-gtk
+ibus-gtk3
+libibus-1.0-5
+fcitx-frontend-gtk2
+fcitx-frontend-gtk3
+libfcitx-gclient1
+libfcitx-utils0
 gtk+2.0:src
 glib2.0:src

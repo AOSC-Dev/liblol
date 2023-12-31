@@ -1690,6 +1690,62 @@ SRCS="$SRCS file::rename=dist_gvfs-libs-dbgsym.deb::${_mirror}/pool/main/g/gvfs/
 "
 CHKSUMS="$CHKSUMS sha256::6d6972ca801eb34f6e08644596e5ac0c6ef39a0e88f332583a5554c2fe153101 \
 "
+SRCS="$SRCS file::rename=dist_ibus-gtk.deb::${_mirror}/pool/main/i/ibus/ibus-gtk_1.5.19-4+deb10u1.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::c1dcfcd0004645991fc18b25f3a66b963003bb32f5f9532bbb88a680d98d5ea0 \
+"
+SRCS="$SRCS file::rename=dist_ibus-gtk-dbgsym.deb::${_mirror}/pool/main/i/ibus/ibus-gtk-dbgsym_1.5.19-4+deb10u1.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::59bf5a417eebe5199cebd6773fa084bc36b11bca28ec311fe0c88d848b1807b1 \
+"
+SRCS="$SRCS file::rename=dist_ibus-gtk3.deb::${_mirror}/pool/main/i/ibus/ibus-gtk3_1.5.19-4+deb10u1.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::e10b4cc44bba299aa7048202bda1f08cd69603be9d1ec05cb9571ade2231dfed \
+"
+SRCS="$SRCS file::rename=dist_ibus-gtk3-dbgsym.deb::${_mirror}/pool/main/i/ibus/ibus-gtk3-dbgsym_1.5.19-4+deb10u1.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::9c23eaa2b46a54287ed4fa28d39ba2f7e8803787ae733b6322d5cec7c461afd9 \
+"
+SRCS="$SRCS file::rename=dist_libibus-1.0-5.deb::${_mirror}/pool/main/i/ibus/libibus-1.0-5_1.5.19-4+deb10u1.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::2b7b905d28073d0fe218a9c3b4116a2f3e427148f2e098b7700194d541404ae5 \
+"
+SRCS="$SRCS file::rename=dist_libibus-1.0-5-dbgsym.deb::${_mirror}/pool/main/i/ibus/libibus-1.0-5-dbgsym_1.5.19-4+deb10u1.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::7077c8e2b9cf16f35e8b14a9a8a5c8ffb3d97c42c905f4fbd9fed5557953b094 \
+"
+SRCS="$SRCS file::rename=dist_fcitx-frontend-gtk2.deb::${_mirror}/pool/main/f/fcitx/fcitx-frontend-gtk2_4.2.9.6-5.lnd.7_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::6897c0115b56064ea4f5b39404dc553c3ea9da670c4e3478d841d4adbd307351 \
+"
+SRCS="$SRCS file::rename=dist_fcitx-frontend-gtk2-dbgsym.deb::${_mirror}/pool/main/f/fcitx/fcitx-frontend-gtk2-dbgsym_4.2.9.6-5.lnd.7_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::87e09339b763170bedbf7605f38f64837890122a3b1c500268204cc2f14904e9 \
+"
+SRCS="$SRCS file::rename=dist_fcitx-frontend-gtk3.deb::${_mirror}/pool/main/f/fcitx/fcitx-frontend-gtk3_4.2.9.6-5.lnd.7_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::5a18fa5e315febba2b0d04817cc8eedc339a2b89c460a68b345b4dc36aceb140 \
+"
+SRCS="$SRCS file::rename=dist_fcitx-frontend-gtk3-dbgsym.deb::${_mirror}/pool/main/f/fcitx/fcitx-frontend-gtk3-dbgsym_4.2.9.6-5.lnd.7_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::5ba9ac8debff7ab5c07b526ec488a23e2e714e535353d83e752e4dce971c7bd7 \
+"
+SRCS="$SRCS file::rename=dist_libfcitx-gclient1.deb::${_mirror}/pool/main/f/fcitx/libfcitx-gclient1_4.2.9.6-5.lnd.7_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::22563619e3953ff32dfbed6c47f2d268c3e625bdd97a9d48f1dd579318e34e82 \
+"
+SRCS="$SRCS file::rename=dist_libfcitx-gclient1-dbgsym.deb::${_mirror}/pool/main/f/fcitx/libfcitx-gclient1-dbgsym_4.2.9.6-5.lnd.7_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::1466aa7d1ba6f31963945a3b56f7c321d90a235a6eeb74271d4e2940128ff00f \
+"
+SRCS="$SRCS file::rename=dist_libfcitx-utils0.deb::${_mirror}/pool/main/f/fcitx/libfcitx-utils0_4.2.9.6-5.lnd.7_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::f5aec572a1c5a3ee7e05ded85ef0b3a8a114a0d83e65fcdf33f784761c872065 \
+"
+SRCS="$SRCS file::rename=dist_libfcitx-utils0-dbgsym.deb::${_mirror}/pool/main/f/fcitx/libfcitx-utils0-dbgsym_4.2.9.6-5.lnd.7_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::5d0eacc97c99e4b70eec02821d03de4443718d96fbc8dc1e95db05a6c66609bb \
+"
 SRCS="$SRCS file::rename=gtk+2.0_2.24.32-3.1.dsc::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32-3.1.dsc \
 file::rename=gtk+2.0_2.24.32.orig.tar.xz::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32.orig.tar.xz \
 file::rename=gtk+2.0_2.24.32-3.1.debian.tar.xz::${_mirror}/pool/main/g/gtk+2.0/gtk+2.0_2.24.32-3.1.debian.tar.xz \

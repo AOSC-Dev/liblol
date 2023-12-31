@@ -14,7 +14,11 @@ apt-get install --no-install-recommends -y \
     dconf-gsettings-backend \
     gvfs \
     glib-networking \
-    gvfs-libs
+    gvfs-libs \
+    fcitx-frontend-gtk2 \
+    fcitx-frontend-gtk3 \
+    ibus-gtk \
+    ibus-gtk3
 
 exec 3> spec.new
 

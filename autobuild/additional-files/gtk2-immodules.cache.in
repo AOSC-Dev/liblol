@@ -13,6 +13,12 @@
 "@libdir@/gtk-2.0/2.10.0/immodules/im-cyrillic-translit.so" 
 "cyrillic_translit" "Cyrillic (Transliterated)" "gtk20" "/usr/share/locale" "" 
 
+"@libdir@/gtk-2.0/2.10.0/immodules/im-fcitx.so" 
+"fcitx" "Fcitx (Flexible Input Method Framework)" "fcitx" "/usr/share/locale" "ja:ko:zh:*" 
+
+"@libdir@/gtk-2.0/2.10.0/immodules/im-ibus.so" 
+"ibus" "IBus (Intelligent Input Bus)" "ibus" "" "ja:ko:zh:*" 
+
 "@libdir@/gtk-2.0/2.10.0/immodules/im-inuktitut.so" 
 "inuktitut" "Inuktitut (Transliterated)" "gtk20" "/usr/share/locale" "iu" 
 
