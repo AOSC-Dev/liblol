@@ -508,6 +508,7 @@ set_host_build_env() {
             -ffile-prefix-map=$BLDDIR=. \
         "
         "PKG_CONFIG=pkg-config"
+        "LT_SYS_LIBRARY_PATH=$LOLPREFIX/lib/$OWTARGET:$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu"
     )
 }
 
@@ -595,9 +596,7 @@ host_gtk2() {
     dpkg-source -x "$SRCDIR/gtk+2.0_"*.dsc "$BLDDIR/src/gtk2"
 
     abinfo "Regenerating Autotools scripts ..."
-    autoreconf -fvs "$BLDDIR/src/gtk2"
-    cp -v /usr/bin/{config.guess,config.sub} \
-        "$BLDDIR/src/gtk2/"
+    autoreconf -fvs --install "$BLDDIR/src/gtk2"
 
     apply_source_patch_series \
         "$SRCDIR/autobuild/patches/gtk2" \
@@ -649,9 +648,7 @@ host_gtk3() {
     dpkg-source -x "$SRCDIR/gtk+3.0_"*.dsc "$BLDDIR/src/gtk3"
 
     abinfo "Regenerating Autotools scripts ..."
-    autoreconf -fvs "$BLDDIR/src/gtk3"
-    cp -v /usr/bin/{config.guess,config.sub} \
-        "$BLDDIR/src/gtk3/build-aux/"
+    autoreconf -fvs --install "$BLDDIR/src/gtk3"
 
     pushd "$BLDDIR/build/host-gtk3"
 
@@ -766,9 +763,7 @@ host_libcanberra() {
     dpkg-source -x "$SRCDIR/libcanberra_"*.dsc "$BLDDIR/src/libcanberra"
 
     abinfo "Regenerating Autotools scripts ..."
-    autoreconf -fvs "$BLDDIR/src/libcanberra"
-    cp -v /usr/bin/{config.guess,config.sub} \
-        "$BLDDIR/src/libcanberra/build-aux/"
+    autoreconf -fvs --install "$BLDDIR/src/libcanberra"
 
     pushd "$BLDDIR/build/host-libcanberra"
 

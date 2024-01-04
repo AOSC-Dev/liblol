@@ -5,4 +5,4 @@ PKGDES="Compatibility layer for running applications designed for \"Old World\" 
 NOLTO=1
 
 FAIL_ARCH="!(loongarch64)"
-BUILDDEP="patchelf gobject-introspection iso-codes"
+BUILDDEP="patchelf gobject-introspection iso-codes gtk-doc"
