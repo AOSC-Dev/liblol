@@ -296,9 +296,6 @@ install_additional_libs() {
         > "$PKGDIR$LOLPREFIX/etc/ld.so.conf.d/10_gpudrv_path.conf"
     echo "$LOLPREFIX/lib/$OWTARGET" \
         > "$PKGDIR$LOLPREFIX/etc/ld.so.conf.d/$OWTARGET.conf"
-    mkdir -pv "$PKGDIR/usr/share/gpudriverpath"
-    sed 's@/usr/lib/loongarch64-linux-gnu@'"$LOLPREFIX/lib/$OWTARGET"'@' "$BLDDIR/unpack/add_libs/usr/share/gpudriverpath/gsgpu_path.conf" \
-        > "$PKGDIR/usr/share/gpudriverpath/gsgpu_path.conf"
 
     patch_elf_rpath "libpulse.so.0" "$LOLPREFIX/lib/$OWTARGET/pulseaudio"
     patch_elf_rpath "gio/modules/libgioremote-volume-monitor.so" "$LOLPREFIX/lib/$OWTARGET/gvfs"

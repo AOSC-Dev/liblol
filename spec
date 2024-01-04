@@ -846,14 +846,6 @@ SRCS="$SRCS file::rename=dist_libvorbisenc2-dbgsym.deb::${_mirror}/pool/main/lib
 "
 CHKSUMS="$CHKSUMS sha256::9cabedfbc23af191c8fcf735ff4a7a70371da8660d53db46c9be958f6ace565e \
 "
-SRCS="$SRCS file::rename=dist_loonggl.deb::${_mirror}/pool/main/l/loonggl/loonggl_0.1.0-1+deb10u1.lnd.3_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::f60530496f08296c62617968ffe63a43d757ad9f1da8bcb2dfcca43a6131fe84 \
-"
-SRCS="$SRCS file::rename=dist_loonggl-dbgsym.deb::${_mirror}/pool/main/l/loonggl/loonggl-dbgsym_0.1.0-1+deb10u1.lnd.3_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::4161d1eeba0e3b57ddc1dadc40da3eb61c36eaa28cf1ee9cf94b7305b27eaef8 \
-"
 SRCS="$SRCS file::rename=dist_libwrap0.deb::${_mirror}/pool/main/t/tcp-wrappers/libwrap0_7.6.q-28.1_loongarch64.deb \
 "
 CHKSUMS="$CHKSUMS sha256::f1b9e0945992219cde085c03489ecc41d65aabdd462853161068428e0b06ad79 \
@@ -949,54 +941,6 @@ CHKSUMS="$CHKSUMS sha256::1063fd0aefeb9e3970185ff666c1313dc49fb41e7fe79749c74cd5
 SRCS="$SRCS file::rename=dist_libcupsimage2-dbgsym.deb::${_mirror}/pool/main/c/cups/libcupsimage2-dbgsym_2.2.10-6+deb10u3.1_loongarch64.deb \
 "
 CHKSUMS="$CHKSUMS sha256::510dec1073f97dc049f9a652d901a66edc64c8a8c56388dd9b7eb3d9da2ab24e \
-"
-SRCS="$SRCS file::rename=dist_dev_libdrm-amdgpu1.deb::${_mirror}/pool/main/libd/libdrm/libdrm-amdgpu1_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::0f245b5e1aade7fee7a88b1bd413b7cbb812a2ce1b602f6db4eb8976b95f13c3 \
-"
-SRCS="$SRCS file::rename=dist_libdrm-amdgpu1-dbgsym.deb::${_mirror}/pool/main/libd/libdrm/libdrm-amdgpu1-dbgsym_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::c795f9fb494ebbb610a0cb7e302e2b73272c05a6c7abcdf6817137720a26dcd3 \
-"
-SRCS="$SRCS file::rename=dist_dev_libdrm-etnaviv1.deb::${_mirror}/pool/main/libd/libdrm/libdrm-etnaviv1_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::57d60942d0d6c8896936ad14914f8d00982be7f616fa998009e39077c239e27e \
-"
-SRCS="$SRCS file::rename=dist_libdrm-etnaviv1-dbgsym.deb::${_mirror}/pool/main/libd/libdrm/libdrm-etnaviv1-dbgsym_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::f58c76aad63de770767e4f0ad0c7542740127b801bdd29e506f9ea83df714146 \
-"
-SRCS="$SRCS file::rename=dist_dev_libdrm-gsgpu1.deb::${_mirror}/pool/main/libd/libdrm/libdrm-gsgpu1_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::2d2c746cbd1b2ba7c9ac333b75fe184a944f4e9af400c7b76f1e168b7feb400b \
-"
-SRCS="$SRCS file::rename=dist_libdrm-gsgpu1-dbgsym.deb::${_mirror}/pool/main/libd/libdrm/libdrm-gsgpu1-dbgsym_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::e0b071908af3bdce5b1422722da3df3d889bbb1ea298d4efb10b75d1e00bd30f \
-"
-SRCS="$SRCS file::rename=dist_dev_libdrm-nouveau2.deb::${_mirror}/pool/main/libd/libdrm/libdrm-nouveau2_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::8477f4451ca0b77ced3268ab61179362a278aa6336c7392ac009905dc293574b \
-"
-SRCS="$SRCS file::rename=dist_libdrm-nouveau2-dbgsym.deb::${_mirror}/pool/main/libd/libdrm/libdrm-nouveau2-dbgsym_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::3a00c28c7df33a5153433822c212e5f5f1110bd6a4fb6a7796309cf54d5316e6 \
-"
-SRCS="$SRCS file::rename=dist_dev_libdrm-radeon1.deb::${_mirror}/pool/main/libd/libdrm/libdrm-radeon1_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::811d4371597b6baf473cc63998884c0ec06f1cfefc30bf0f5e45461abc0c3b78 \
-"
-SRCS="$SRCS file::rename=dist_libdrm-radeon1-dbgsym.deb::${_mirror}/pool/main/libd/libdrm/libdrm-radeon1-dbgsym_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::f287c26129ba0be412a293a1a7541bb13b161837ffbe06bb3fe18946616119c0 \
-"
-SRCS="$SRCS file::rename=dist_dev_libdrm-utils.deb::${_mirror}/pool/main/libd/libdrm/libdrm-utils_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::f1c3cc84e678e86f2b9f32a7c612286900712901150378ae7a8a753a0d60e867 \
-"
-SRCS="$SRCS file::rename=dist_libdrm-utils-dbgsym.deb::${_mirror}/pool/main/libd/libdrm/libdrm-utils-dbgsym_2.4.97-1.lnd.6_loongarch64.deb \
-"
-CHKSUMS="$CHKSUMS sha256::05ab86962632f33fc8e9e185d042150aad41e46511d296ef689f6bd4bd13987f \
 "
 SRCS="$SRCS file::rename=dist_dev_libegl1.deb::${_mirror}/pool/main/libg/libglvnd/libegl1_1.1.0-1.lnd.4_loongarch64.deb \
 "

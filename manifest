@@ -102,7 +102,6 @@ libpulse0
 libsndfile1
 libvorbis0a
 libvorbisenc2
-loonggl
 libwrap0
 libpci3
 libudev1
@@ -116,12 +115,6 @@ libwebp6
 libcairo-script-interpreter2:dev
 libcolord2:dev
 libcupsimage2:dev
-libdrm-amdgpu1:dev
-libdrm-etnaviv1:dev
-libdrm-gsgpu1:dev
-libdrm-nouveau2:dev
-libdrm-radeon1:dev
-libdrm-utils:dev
 libegl1:dev
 libgirepository-1.0-1:dev
 libgles1:dev
