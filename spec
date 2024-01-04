@@ -346,13 +346,17 @@ SRCS="$SRCS file::rename=dist_gcc-8-base.deb::${_mirror}/pool/main/g/gcc-8/gcc-8
 "
 CHKSUMS="$CHKSUMS sha256::65beb2c1cd7fa84d0b7e36de55bf3885f928a3c803dcf08c33354f80e3be8b70 \
 "
-SRCS="$SRCS file::rename=dist_libasound2.deb::${_mirror}/pool/main/a/alsa-lib/libasound2_1.1.8-1.lnd.1_loongarch64.deb \
+SRCS="$SRCS file::rename=dist_dev_libasound2.deb::${_mirror}/pool/main/a/alsa-lib/libasound2_1.1.8-1.lnd.1_loongarch64.deb \
 "
 CHKSUMS="$CHKSUMS sha256::285d80556efea275736a58f3a7c3fb0c2ccfc110e0d846d8c258e21bfcc780eb \
 "
 SRCS="$SRCS file::rename=dist_libasound2-dbgsym.deb::${_mirror}/pool/main/a/alsa-lib/libasound2-dbgsym_1.1.8-1.lnd.1_loongarch64.deb \
 "
 CHKSUMS="$CHKSUMS sha256::17e42844247a23340e141ffb891a1779bd2754403aa70e7d313a3021670dbf70 \
+"
+SRCS="$SRCS file::rename=dev_libasound2-dev.deb::${_mirror}/pool/main/a/alsa-lib/libasound2-dev_1.1.8-1.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::b566cc3726693af19403d16acc157dc0a4fde4dd8f765ba1c27596e604d23cf8 \
 "
 SRCS="$SRCS file::rename=dist_dev_libatk1.0-0.deb::${_mirror}/pool/main/a/atk1.0/libatk1.0-0_2.30.0-2.1_loongarch64.deb \
 "
@@ -806,9 +810,13 @@ SRCS="$SRCS file::rename=dist_libgtk2.0-0-dbgsym.deb::${_mirror}/pool/main/g/gtk
 "
 CHKSUMS="$CHKSUMS sha256::40bacb7afd0fa9dd94a2e5518ccdacf4f6d61aedf2583a3ba367641332329aaf \
 "
-SRCS="$SRCS file::rename=dist_libogg0.deb::${_mirror}/pool/main/libo/libogg/libogg0_1.3.2-1-lnd.2_loongarch64.deb \
+SRCS="$SRCS file::rename=dist_dev_libogg0.deb::${_mirror}/pool/main/libo/libogg/libogg0_1.3.2-1-lnd.2_loongarch64.deb \
 "
 CHKSUMS="$CHKSUMS sha256::aa6af34425935e6829d5bac6fa885e91c6952382052bdc80cee1928902b7ffc4 \
+"
+SRCS="$SRCS file::rename=dev_libogg-dev.deb::${_mirror}/pool/main/libo/libogg/libogg-dev_1.3.2-1-lnd.2_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::8835fad96793029a13d84311f677f0de77eb500dd862a9252b874c8593239808 \
 "
 SRCS="$SRCS file::rename=dist_libogg-dbg.deb::${_mirror}/pool/main/libo/libogg/libogg-dbg_1.3.2-1-lnd.2_loongarch64.deb \
 "
@@ -1705,4 +1713,100 @@ file::rename=glib2.0_2.58.3-2+deb10u2.1.debian.tar.xz::${_mirror}/pool/main/g/gl
 CHKSUMS="$CHKSUMS sha256::52363386e9abda754ae579adb8d3630c702f1777d79219ec2325d90b66bb927f \
 sha256::8f43c31767e88a25da72b52a40f3301fefc49a665b56dc10ee7cc9565cbe7481 \
 sha256::81a47ce102148fc6763dba81c37e5b1d5c010eceaf4015ad85bc7b595770d884 \
+"
+SRCS="$SRCS file::rename=libcanberra_0.30-7.1.dsc::${_mirror}/pool/main/libc/libcanberra/libcanberra_0.30-7.1.dsc \
+file::rename=libcanberra_0.30.orig.tar.xz::${_mirror}/pool/main/libc/libcanberra/libcanberra_0.30.orig.tar.xz \
+file::rename=libcanberra_0.30-7.1.debian.tar.xz::${_mirror}/pool/main/libc/libcanberra/libcanberra_0.30-7.1.debian.tar.xz \
+"
+CHKSUMS="$CHKSUMS sha256::dc2cd7bfe6223ff8b65eb419ec5f21f9df83a8e9aa67cbee60ffa1e1761e5db8 \
+sha256::c2b671e67e0c288a69fc33dc1b6f1b534d07882c2aceed37004bf48c601afa72 \
+sha256::1bdd230976fa4372fb3addf702f5b1787f415d11d3d5377561ee5c71fea5d3a3 \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-gtk-module.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-gtk-module_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::e11eb094573b1230d0e775cbafdac16bdee4a864f357a481d0b802674bb3033a \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-gtk-module-dbgsym.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-gtk-module-dbgsym_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::c819617420de80290af0e5e5b0db7ba4ea62c79fbdf98e1d93da26d8dce87d7d \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-gtk3-module.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-gtk3-module_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::9fd204889efc657541678c25f92ed8478a383b02f6389639e3fa3e8dfcf082dd \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-gtk3-module-dbgsym.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-gtk3-module-dbgsym_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::cdf6abb0c73291754018ee12668e915c9e8624d6882de211b4e4165fcf69e23e \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-gtk3-0.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-gtk3-0_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::d6271749b34a1d7b0342e48b1743ee6a3961d06a1f852b6f19675705c59ee42b \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-gtk3-0-dbgsym.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-gtk3-0-dbgsym_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::22eb1d3458793ebf64cf6636d6aeeb2ff39141044771655ee142b4aded994123 \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-gtk0.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-gtk0_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::dab87b63b1a209d5e9f528f818fc2612bfb50d6de4ee20678d28616d51f91ae6 \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-gtk0-dbgsym.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-gtk0-dbgsym_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::93984075d3d4200104589d60c0c5f2f173878e8ec8161430290c4871ecbe5dd2 \
+"
+SRCS="$SRCS file::rename=dist_dev_libltdl7.deb::${_mirror}/pool/main/libt/libtool/libltdl7_2.4.6-9.1.lnd.2_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::b7c76805bda93d3f39759e6bbdab4dbf80fa1b26447aca91d10440cf30732177 \
+"
+SRCS="$SRCS file::rename=dist_libltdl7-dbgsym.deb::${_mirror}/pool/main/libt/libtool/libltdl7-dbgsym_2.4.6-9.1.lnd.2_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::5345a5489e690195dfc867614116215c3535f62d367fb0e10c1b7e8982ed8835 \
+"
+SRCS="$SRCS file::rename=dev_libltdl-dev.deb::${_mirror}/pool/main/libt/libtool/libltdl-dev_2.4.6-9.1.lnd.2_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::a785ce9f61b83f39a889d41d60aecf82100d9ee6a8564ef88484d74ca3201592 \
+"
+SRCS="$SRCS file::rename=dist_dev_libtdb1.deb::${_mirror}/pool/main/t/tdb/libtdb1_1.3.16-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::3cf831b529fc389c77575fd3924243f991e767b93a907ca96d15b4da35d5ea94 \
+"
+SRCS="$SRCS file::rename=dist_libtdb1-dbgsym.deb::${_mirror}/pool/main/t/tdb/libtdb1-dbgsym_1.3.16-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::a40ee45366852f326ea1feef712ada374a2e246da54a9e0950bbfbbd51794255 \
+"
+SRCS="$SRCS file::rename=dev_libtdb-dev.deb::${_mirror}/pool/main/t/tdb/libtdb-dev_1.3.16-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::120fbcd6436e5c421bda8f26715126c29264e0368ecabfea4af6784388e3ceda \
+"
+SRCS="$SRCS file::rename=dist_dev_libvorbisfile3.deb::${_mirror}/pool/main/libv/libvorbis/libvorbisfile3_1.3.6-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::9cdbb99473f9769e3b2e746dfdc5b7fc925be89c56a9fceeabd44fc4baf74e79 \
+"
+SRCS="$SRCS file::rename=dist_libvorbisfile3-dbgsym.deb::${_mirror}/pool/main/libv/libvorbis/libvorbisfile3-dbgsym_1.3.6-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::ce450067ce7a1de08824925346abbabed21933c70823650302ea4a73baa5f815 \
+"
+SRCS="$SRCS file::rename=dev_libvorbis-dev.deb::${_mirror}/pool/main/libv/libvorbis/libvorbis-dev_1.3.6-2.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::c0dfa5e276cbc324981e441bc74f0823cfed4fddeed99ded5575a3cf099a1669 \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-pulse.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-pulse_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::e96ca74a316212d190afd84ec3a4a2d95339428189175b2b84dc6c1f5cda87b9 \
+"
+SRCS="$SRCS file::rename=dist_libcanberra-pulse-dbgsym.deb::${_mirror}/pool/main/libc/libcanberra/libcanberra-pulse-dbgsym_0.30-7.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::c8af3f0987ed89397acb04de0661d0eb4629ce1d971d5a022f750264a4e5fdbc \
+"
+SRCS="$SRCS file::rename=dev_libgtk-3-dev.deb::${_mirror}/pool/main/g/gtk+3.0/libgtk-3-dev_3.24.5-1.lnd.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::b80075870e6d43328b6c94d7d8634fa4fcf28f56cc2e2f3fb83e4976ec307b71 \
+"
+SRCS="$SRCS file::rename=dev_libgtk2.0-dev.deb::${_mirror}/pool/main/g/gtk+2.0/libgtk2.0-dev_2.24.32-3.1_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::0b7188d2025ac3eac5ae4084687943d48c6b310c7033b485254c642d17249f1d \
+"
+SRCS="$SRCS file::rename=dev_libpulse-dev.deb::${_mirror}/pool/main/p/pulseaudio/libpulse-dev_12.2-4+deb10u1.1.lnd.6_loongarch64.deb \
+"
+CHKSUMS="$CHKSUMS sha256::e2597c022e3999bdbe05942db110c13ac4b6954624b0883ef82e1c6e546d6f14 \
 "

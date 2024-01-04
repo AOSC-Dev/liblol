@@ -759,6 +759,46 @@ EOF
     popd
 }
 
+host_libcanberra() {
+    mkdir -p "$BLDDIR/build/host-libcanberra"
+
+    abinfo "Unpacking libcanberra ..."
+    dpkg-source -x "$SRCDIR/libcanberra_"*.dsc "$BLDDIR/src/libcanberra"
+
+    abinfo "Regenerating Autotools scripts ..."
+    autoreconf -fvs "$BLDDIR/src/libcanberra"
+    cp -v /usr/bin/{config.guess,config.sub} \
+        "$BLDDIR/src/libcanberra/build-aux/"
+
+    pushd "$BLDDIR/build/host-libcanberra"
+
+    abinfo "Configuring host libcanberra ..."
+    env -i "${HOST_BUILD_ENVS[@]}" \
+        "$BLDDIR/src/libcanberra/configure" \
+            --host="$OWTARGET" \
+            --prefix="$LOLPREFIX" \
+            --libdir="$LOLPREFIX/lib/$OWTARGET" \
+            --libexecdir="$LOLPREFIX/libexec" \
+            --localstatedir=/var \
+            --datarootdir=/usr/share \
+            --sysconfdir=/etc \
+            --enable-pulse \
+            --enable-gtk \
+            --with-builtin=dso \
+            --enable-tdb \
+            --enable-alsa \
+            --disable-oss
+
+    abinfo "Building host libcanberra ..."
+    env -i "${HOST_BUILD_ENVS[@]}" "MAKEFLAGS=$MAKEFLAGS" \
+        make -C src libcanberra.la V=1
+
+    abinfo "Installing host libcanberra ..."
+    install_host_shlib "src/.libs/libcanberra.so.0"
+
+    popd
+}
+
 install_hooks() {
     for i in postinst postrm; do
         sed 's#@prefix@#'"$LOLPREFIX"'#g; s#@target@#'"$OWTARGET"'#g' \
@@ -805,6 +845,9 @@ host_gtk3
 
 abinfo "Building host glib2"
 host_glib2
+
+abinfo "Building host libcanberra"
+host_libcanberra
 
 abinfo "Install additional runtime libraries ..."
 install_additional_libs
