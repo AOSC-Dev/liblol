@@ -57,3 +57,12 @@ if [ -d "$GIO_MOD_DIR" ]; then
         echo "Please run '$GIO_MOD_UPDATER $GIO_MOD_DIR' manually after loading" >&2
     fi
 fi
+
+if ! systemd-detect-virt --container; then
+    echo "Loading the la_ow_syscall (old-world syscall compatibility) kernel module ..."
+    modprobe la_ow_syscall || \
+        echo "
+Warning: The la_ow_syscall kernel module does not appear to be available.
+Old-world applications may not run.
+"
+fi
