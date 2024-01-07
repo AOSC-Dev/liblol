@@ -1,4 +1,4 @@
-From 1df88129c2f69888340c226d6f09a6362e4be426 Mon Sep 17 00:00:00 2001
+From 092ba50acf855161c16f89b37d80074949d1926a Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 7 Jan 2024 08:06:36 +0800
 Subject: [PATCH 2/3] impl sigaction with new world ucontext compat
@@ -10,7 +10,7 @@ Subject: [PATCH 2/3] impl sigaction with new world ucontext compat
 
 diff --git a/sysdeps/unix/sysv/linux/loongarch/sigaction.c b/sysdeps/unix/sysv/linux/loongarch/sigaction.c
 new file mode 100644
-index 0000000000..07a098b6a4
+index 0000000000..f5a119c0ee
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/loongarch/sigaction.c
 @@ -0,0 +1,465 @@
@@ -424,10 +424,6 @@ index 0000000000..07a098b6a4
 +  result = INLINE_SYSCALL_CALL (rt_sigaction, sig, act ? &kact : NULL,
 +                                oact ? &koact : NULL, STUB (act) _NW_NSIG / 8);
 +
-+  if (result >= 0 && new_prog)
-+    {
-+      store_handler (&prog_pool[sig], new_prog);
-+    }
 +  if (oact && result >= 0)
 +    {
 +      if (!is_fake_handler ((__linx_sighandler_t)koact.k_sa_handler))
@@ -454,6 +450,10 @@ index 0000000000..07a098b6a4
 +              (_NSIG - _NW_NSIG) / 8);
 +      oact->sa_flags = koact.sa_flags;
 +      RESET_SA_RESTORER (oact, &koact);
++    }
++  if (result >= 0 && new_prog)
++    {
++      store_handler (&prog_pool[sig], new_prog);
 +    }
 +  if (result < 0)
 +    {
