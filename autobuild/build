@@ -524,17 +524,6 @@ install_host_shlib() {
         "$PKGDIR$LOLPREFIX/lib/$OWTARGET/$(basename -- "$libname")"
 }
 
-install_host_cache_default() {
-    local cachefile="$1"
-    local cachepackage="$2"
-
-    abinfo "Installing host module cache file for $cachepackage ..."
-    mkdir -p "$PKGDIR/usr/share/liblol"
-    sed 's#@libdir@#'"$LOLPREFIX/lib/$OWTARGET"'#g' \
-        "$SRCDIR/autobuild/additional-files/$cachefile.in" \
-        > "$PKGDIR/usr/share/liblol/$cachefile.default"
-}
-
 host_gdk_pixbuf() {
     mkdir -p "$BLDDIR/build/host-gdk-pixbuf"
 
@@ -583,8 +572,6 @@ EOF
 
     install -Dvm755 "gdk-pixbuf/gdk-pixbuf-query-loaders" \
         -t "$PKGDIR$LOLPREFIX/lib/$OWTARGET/gdk-pixbuf-2.0/"
-
-    install_host_cache_default "gdk-pixbuf-query-loaders.cache" "gdk-pixbuf"
 
     popd
 }
@@ -636,7 +623,6 @@ EOF
 
     abinfo "Installing host gtk2 ..."
     install_host_shlib "gtk/.libs/libgtk-x11-2.0.so.0"
-    install_host_cache_default "gtk2-immodules.cache" "gtk2 immodules"
 
     popd
 }
@@ -690,7 +676,6 @@ EOF
 
     abinfo "Installing host gtk3 ..."
     install_host_shlib "gtk/.libs/libgtk-3.so.0"
-    install_host_cache_default "gtk3-immodules.cache" "gtk3 immodules"
 
     popd
 }
@@ -750,8 +735,6 @@ EOF
 
     abinfo "Installing host glib2 ..."
     install_host_shlib "gio/libgio-2.0.so.0"
-
-    install_host_cache_default "giomodule.cache" "glib2"
 
     popd
 }

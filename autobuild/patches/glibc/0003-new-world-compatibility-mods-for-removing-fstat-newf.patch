@@ -1,0 +1,482 @@
+From 30137cf3be754d9533c38f7b9ebad94ca56d4ff1 Mon Sep 17 00:00:00 2001
+From: Miao Wang <shankerwangmiao@gmail.com>
+Date: Sun, 7 Jan 2024 04:19:42 +0800
+Subject: [PATCH 3/3] new world compatibility mods for removing fstat
+ newfstatat
+
+---
+ sysdeps/unix/sysv/linux/loongarch/Makefile    |  3 +
+ sysdeps/unix/sysv/linux/loongarch/fxstat.c    | 60 ++++++++++++
+ sysdeps/unix/sysv/linux/loongarch/fxstatat.c  | 57 +++++++++++
+ sysdeps/unix/sysv/linux/loongarch/lxstat.c    | 62 ++++++++++++
+ sysdeps/unix/sysv/linux/loongarch/statx_cp.c  | 47 +++++++++
+ sysdeps/unix/sysv/linux/loongarch/statx_cp.h  | 20 ++++
+ sysdeps/unix/sysv/linux/loongarch/xstat.c     | 61 ++++++++++++
+ sysdeps/unix/sysv/linux/loongarch/xstatconv.c | 95 +++++++++++++++++++
+ 8 files changed, 405 insertions(+)
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/fxstat.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/fxstatat.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/lxstat.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/statx_cp.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/statx_cp.h
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/xstat.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/xstatconv.c
+
+diff --git a/sysdeps/unix/sysv/linux/loongarch/Makefile b/sysdeps/unix/sysv/linux/loongarch/Makefile
+index 6f049aa9ab..77a3bbce35 100644
+--- a/sysdeps/unix/sysv/linux/loongarch/Makefile
++++ b/sysdeps/unix/sysv/linux/loongarch/Makefile
+@@ -15,3 +15,6 @@ ifeq ($(subdir),stdlib)
+ gen-as-const-headers += ucontext_i.sym
+ endif
+ 
++ifeq ($(subdir),io)
++sysdep_routines += statx_cp
++endif
+diff --git a/sysdeps/unix/sysv/linux/loongarch/fxstat.c b/sysdeps/unix/sysv/linux/loongarch/fxstat.c
+new file mode 100644
+index 0000000000..a0df544f29
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/fxstat.c
+@@ -0,0 +1,60 @@
++/* fxstat using old-style Unix fstat system call.
++   Copyright (C) 1991-2018 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/* Ho hum, since xstat == xstat64 we must get rid of the prototype or gcc
++   will complain since they don't strictly match.  */
++#define __fxstat64 __fxstat64_disable
++
++#include <errno.h>
++#include <stddef.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <kernel_stat.h>
++
++#include <sysdep.h>
++#include <sys/syscall.h>
++
++#include <xstatconv.h>
++#include <statx_cp.h>
++
++/* Get information about the file FD in BUF.  */
++int
++__fxstat (int vers, int fd, struct stat *buf)
++{
++  if (vers != _STAT_VER_KERNEL && vers != _STAT_VER_LINUX)
++    {
++      __set_errno (EINVAL);
++      return -1;
++    }
++
++  struct stat64 kst64;
++  struct statx tmp;
++  int rc = INLINE_SYSCALL (statx, 5, fd, "", AT_EMPTY_PATH,
++                           STATX_BASIC_STATS, &tmp);
++  if (rc < 0)
++    return rc;
++
++  __cp_stat64_statx (&kst64, &tmp);
++  return __xstat32_conv (vers, &kst64, buf);
++}
++
++hidden_def (__fxstat)
++weak_alias (__fxstat, _fxstat);
++#undef __fxstat64
++strong_alias (__fxstat, __fxstat64);
++hidden_ver (__fxstat, __fxstat64)
+diff --git a/sysdeps/unix/sysv/linux/loongarch/fxstatat.c b/sysdeps/unix/sysv/linux/loongarch/fxstatat.c
+new file mode 100644
+index 0000000000..ca6eb47199
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/fxstatat.c
+@@ -0,0 +1,57 @@
++/* Copyright (C) 2005-2018 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/* Ho hum, since fxstatat == fxstatat64 we must get rid of the
++   prototype or gcc will complain since they don't strictly match.  */
++#define __fxstatat64 __fxstatat64_disable
++
++#include <errno.h>
++#include <fcntl.h>
++#include <stddef.h>
++#include <stdio.h>
++#include <string.h>
++#include <sys/stat.h>
++
++#include <sysdep.h>
++#include <sys/syscall.h>
++
++#include <xstatconv.h>
++#include <statx_cp.h>
++
++/* Get information about the file NAME relative to FD in ST.  */
++int
++__fxstatat (int vers, int fd, const char *file, struct stat *st, int flag)
++{
++  if (vers != _STAT_VER_KERNEL && vers != _STAT_VER_LINUX)
++    {
++      __set_errno (EINVAL);
++      return -1;
++    }
++  struct stat64 kst64;
++  struct statx tmp;
++  int rc = INLINE_SYSCALL (statx, 5, fd, file, AT_NO_AUTOMOUNT | flag,
++                           STATX_BASIC_STATS, &tmp);
++  if (rc < 0)
++    return rc;
++
++  __cp_stat64_statx (&kst64, &tmp);
++  return __xstat32_conv (vers, &kst64, st);
++}
++libc_hidden_def (__fxstatat)
++#undef __fxstatat64
++strong_alias (__fxstatat, __fxstatat64);
++strong_alias (__fxstatat64, __GI___fxstatat64)
+diff --git a/sysdeps/unix/sysv/linux/loongarch/lxstat.c b/sysdeps/unix/sysv/linux/loongarch/lxstat.c
+new file mode 100644
+index 0000000000..dec1747ab1
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/lxstat.c
+@@ -0,0 +1,62 @@
++/* Copyright (C) 2011-2018 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Chris Metcalf <cmetcalf@tilera.com>, 2011.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/* Ignore prototype to avoid error if we alias __lxstat and __lxstat64. */
++#define __lxstat64 __lxstat64_disable
++
++#include <errno.h>
++#include <stddef.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <kernel_stat.h>
++
++#include <sysdep.h>
++#include <sys/syscall.h>
++
++#include <xstatconv.h>
++#include <statx_cp.h>
++
++/* Get information about the file NAME in BUF.  */
++int
++__lxstat (int vers, const char *name, struct stat *buf)
++{
++  if (vers != _STAT_VER_KERNEL)
++    {
++      errno = EINVAL;
++      return -1;
++    }
++  struct stat64 kst64;
++  struct statx tmp;
++  int rc = INLINE_SYSCALL (statx, 5, AT_FDCWD, name,
++                           AT_NO_AUTOMOUNT | AT_SYMLINK_NOFOLLOW,
++                           STATX_BASIC_STATS, &tmp);
++
++  if (rc < 0)
++    return rc;
++
++  __cp_stat64_statx (&kst64, &tmp);
++  return __xstat32_conv (vers, &kst64, buf);
++}
++
++hidden_def (__lxstat)
++weak_alias (__lxstat, _lxstat);
++#if XSTAT_IS_XSTAT64
++#undef __lxstat64
++strong_alias (__lxstat, __lxstat64);
++hidden_ver (__lxstat, __lxstat64)
++#endif
+diff --git a/sysdeps/unix/sysv/linux/loongarch/statx_cp.c b/sysdeps/unix/sysv/linux/loongarch/statx_cp.c
+new file mode 100644
+index 0000000000..0d72aa7c5d
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/statx_cp.c
+@@ -0,0 +1,47 @@
++/* Struct statx to stat/stat64 conversion for Linux.
++   Copyright (C) 2018-2024 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <https://www.gnu.org/licenses/>.  */
++
++#include <stddef.h>
++#include <string.h>
++#include <sys/stat.h>
++
++#include <statx_cp.h>
++
++void
++__cp_stat64_statx (struct stat64 *to, struct statx *from)
++{
++  memset (to, 0, sizeof (struct stat64));
++  to->st_dev = ((from->stx_dev_minor & 0xff) | (from->stx_dev_major << 8)
++		| ((from->stx_dev_minor & ~0xff) << 12));
++  to->st_rdev = ((from->stx_rdev_minor & 0xff) | (from->stx_rdev_major << 8)
++		 | ((from->stx_rdev_minor & ~0xff) << 12));
++  to->st_ino = from->stx_ino;
++  to->st_mode = from->stx_mode;
++  to->st_nlink = from->stx_nlink;
++  to->st_uid = from->stx_uid;
++  to->st_gid = from->stx_gid;
++  to->st_atime = from->stx_atime.tv_sec;
++  to->st_atim.tv_nsec = from->stx_atime.tv_nsec;
++  to->st_mtime = from->stx_mtime.tv_sec;
++  to->st_mtim.tv_nsec = from->stx_mtime.tv_nsec;
++  to->st_ctime = from->stx_ctime.tv_sec;
++  to->st_ctim.tv_nsec = from->stx_ctime.tv_nsec;
++  to->st_size = from->stx_size;
++  to->st_blocks = from->stx_blocks;
++  to->st_blksize = from->stx_blksize;
++}
+diff --git a/sysdeps/unix/sysv/linux/loongarch/statx_cp.h b/sysdeps/unix/sysv/linux/loongarch/statx_cp.h
+new file mode 100644
+index 0000000000..e755aa08cd
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/statx_cp.h
+@@ -0,0 +1,20 @@
++/* Struct statx to stat/stat64 conversion for Linux.
++   Copyright (C) 2018-2024 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <https://www.gnu.org/licenses/>.  */
++
++extern void __cp_stat64_statx (struct stat64 *to, struct statx *from)
++  attribute_hidden;
+diff --git a/sysdeps/unix/sysv/linux/loongarch/xstat.c b/sysdeps/unix/sysv/linux/loongarch/xstat.c
+new file mode 100644
+index 0000000000..9bfd2c8782
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/xstat.c
+@@ -0,0 +1,61 @@
++/* Copyright (C) 2011-2018 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Chris Metcalf <cmetcalf@tilera.com>, 2011.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/* Ignore prototype to avoid error if we alias __xstat and __xstat64. */
++#define __xstat64 __xstat64_disable
++
++#include <errno.h>
++#include <stddef.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <kernel_stat.h>
++
++#include <sysdep.h>
++#include <sys/syscall.h>
++
++#include <xstatconv.h>
++#include <statx_cp.h>
++
++/* Get information about the file NAME in BUF.  */
++int
++__xstat (int vers, const char *name, struct stat *buf)
++{
++  if (vers != _STAT_VER_KERNEL)
++    {
++      errno = EINVAL;
++      return -1;
++    }
++
++  struct stat64 kst64;
++  struct statx tmp;
++  int rc = INLINE_SYSCALL (statx, 5, AT_FDCWD, name, AT_NO_AUTOMOUNT,
++                           STATX_BASIC_STATS, &tmp);
++  if (rc < 0)
++    return rc;
++
++  __cp_stat64_statx (&kst64, &tmp);
++  return __xstat32_conv (vers, &kst64, buf);
++}
++
++hidden_def (__xstat)
++weak_alias (__xstat, _xstat);
++#if XSTAT_IS_XSTAT64
++#undef __xstat64
++strong_alias (__xstat, __xstat64);
++hidden_ver (__xstat, __xstat64)
++#endif
+diff --git a/sysdeps/unix/sysv/linux/loongarch/xstatconv.c b/sysdeps/unix/sysv/linux/loongarch/xstatconv.c
+new file mode 100644
+index 0000000000..e2625ca1c2
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/xstatconv.c
+@@ -0,0 +1,95 @@
++#include <errno.h>
++#include <sys/stat.h>
++#include <kernel_stat.h>
++#include <kernel-features.h>
++#include <sysdep.h>
++
++#include <string.h>
++
++int
++__xstat32_conv (int vers, struct stat64 *kbuf, struct stat *buf)
++{
++  switch (vers)
++    {
++    case _STAT_VER_KERNEL:
++      {
++	/* Convert current kernel version of `struct stat64' to
++           `struct stat'.  */
++	buf->st_dev = kbuf->st_dev;
++#ifdef _HAVE_STAT___PAD1
++	buf->__pad1 = 0;
++#endif
++#ifdef _HAVE_STAT64___ST_INO
++# if !__ASSUME_ST_INO_64_BIT
++	if (kbuf->st_ino == 0)
++	  buf->st_ino = kbuf->__st_ino;
++	else
++# endif
++	  {
++	    buf->st_ino = kbuf->st_ino;
++	    if (sizeof (buf->st_ino) != sizeof (kbuf->st_ino)
++		&& buf->st_ino != kbuf->st_ino)
++	      return INLINE_SYSCALL_ERROR_RETURN_VALUE (EOVERFLOW);
++	  }
++#else
++	buf->st_ino = kbuf->st_ino;
++	if (sizeof (buf->st_ino) != sizeof (kbuf->st_ino)
++	    && buf->st_ino != kbuf->st_ino)
++	  return INLINE_SYSCALL_ERROR_RETURN_VALUE (EOVERFLOW);
++#endif
++	buf->st_mode = kbuf->st_mode;
++	buf->st_nlink = kbuf->st_nlink;
++	buf->st_uid = kbuf->st_uid;
++	buf->st_gid = kbuf->st_gid;
++	buf->st_rdev = kbuf->st_rdev;
++#ifdef _HAVE_STAT___PAD2
++	buf->__pad2 = 0;
++#endif
++	buf->st_size = kbuf->st_size;
++	/* Check for overflow.  */
++	if (sizeof (buf->st_size) != sizeof (kbuf->st_size)
++	    && buf->st_size != kbuf->st_size)
++	  return INLINE_SYSCALL_ERROR_RETURN_VALUE (EOVERFLOW);
++	buf->st_blksize = kbuf->st_blksize;
++	buf->st_blocks = kbuf->st_blocks;
++	/* Check for overflow.  */
++	if (sizeof (buf->st_blocks) != sizeof (kbuf->st_blocks)
++	    && buf->st_blocks != kbuf->st_blocks)
++	  return INLINE_SYSCALL_ERROR_RETURN_VALUE (EOVERFLOW);
++#ifdef _HAVE_STAT_NSEC
++	buf->st_atim.tv_sec = kbuf->st_atim.tv_sec;
++	buf->st_atim.tv_nsec = kbuf->st_atim.tv_nsec;
++	buf->st_mtim.tv_sec = kbuf->st_mtim.tv_sec;
++	buf->st_mtim.tv_nsec = kbuf->st_mtim.tv_nsec;
++	buf->st_ctim.tv_sec = kbuf->st_ctim.tv_sec;
++	buf->st_ctim.tv_nsec = kbuf->st_ctim.tv_nsec;
++#else
++	buf->st_atime = kbuf->st_atime;
++	buf->st_mtime = kbuf->st_mtime;
++	buf->st_ctime = kbuf->st_ctime;
++#endif
++
++#ifdef _HAVE_STAT___UNUSED1
++	buf->__glibc_reserved1 = 0;
++#endif
++#ifdef _HAVE_STAT___UNUSED2
++	buf->__glibc_reserved2 = 0;
++#endif
++#ifdef _HAVE_STAT___UNUSED3
++	buf->__glibc_reserved3 = 0;
++#endif
++#ifdef _HAVE_STAT___UNUSED4
++	buf->__glibc_reserved4 = 0;
++#endif
++#ifdef _HAVE_STAT___UNUSED5
++	buf->__glibc_reserved5 = 0;
++#endif
++      }
++      break;
++
++    default:
++      return INLINE_SYSCALL_ERROR_RETURN_VALUE (EINVAL);
++    }
++
++  return 0;
++}
+-- 
+2.39.0
+

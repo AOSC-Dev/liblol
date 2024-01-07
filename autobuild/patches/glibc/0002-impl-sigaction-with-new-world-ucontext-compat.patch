@@ -1,0 +1,484 @@
+From 1df88129c2f69888340c226d6f09a6362e4be426 Mon Sep 17 00:00:00 2001
+From: Miao Wang <shankerwangmiao@gmail.com>
+Date: Sun, 7 Jan 2024 08:06:36 +0800
+Subject: [PATCH 2/3] impl sigaction with new world ucontext compat
+
+---
+ sysdeps/unix/sysv/linux/loongarch/sigaction.c | 465 ++++++++++++++++++
+ 1 file changed, 465 insertions(+)
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/sigaction.c
+
+diff --git a/sysdeps/unix/sysv/linux/loongarch/sigaction.c b/sysdeps/unix/sysv/linux/loongarch/sigaction.c
+new file mode 100644
+index 0000000000..07a098b6a4
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/sigaction.c
+@@ -0,0 +1,465 @@
++/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <errno.h>
++#include <signal.h>
++#include <string.h>
++
++#include <atomic.h>
++#if !IS_IN(rtld)
++#include <libc-lock.h>
++#endif
++#include <assert.h>
++#include <sigsetops.h>
++#include <sys/mman.h>
++#include <sys/syscall.h>
++#include <sysdep.h>
++
++/* New ports should not define the obsolete SA_RESTORER, however some
++   architecture requires for compat mode and/or due old ABI.  */
++#include <kernel_sigaction.h>
++
++#ifndef SA_RESTORER
++#define SET_SA_RESTORER(kact, act)
++#define RESET_SA_RESTORER(act, kact)
++#endif
++
++/* SPARC passes the restore function as an argument to rt_sigaction.  */
++#ifndef STUB
++#define STUB(act)
++#endif
++
++#include <sys/ucontext.h>
++
++typedef void (*__linx_sighandler_t) (int, siginfo_t *, void *);
++
++static void
++custom_handler (int sig, siginfo_t *info, void *ucontext,
++                __linx_sighandler_t real_handler)
++{
++
++  struct nw_sigcontext
++  {
++    unsigned long long sc_pc;
++    unsigned long long sc_regs[32];
++    unsigned int sc_flags;
++    unsigned long long sc_extcontext[0] __attribute__ ((__aligned__ (16)));
++  };
++
++  struct nw_ucontext
++  {
++    unsigned long uc_flags;
++    struct nw_ucontext *uc_link;
++    stack_t uc_stack;
++    sigset_t uc_sigmask;
++    unsigned char __unused[1024 / 8 - sizeof (sigset_t)];
++    struct nw_sigcontext uc_mcontext;
++  };
++
++  struct nw_sctx_info
++  {
++    unsigned int magic;
++    unsigned int size;
++    unsigned long long padding; /* padding to 16 bytes */
++  };
++
++/* FPU context */
++#define FPU_CTX_MAGIC 0x46505501
++#define FPU_CTX_ALIGN 8
++  struct fpu_context
++  {
++    unsigned long long regs[32];
++    unsigned long long fcc;
++    unsigned int fcsr;
++  };
++/* LSX context */
++#define LSX_CTX_MAGIC 0x53580001
++#define LSX_CTX_ALIGN 16
++  struct lsx_context
++  {
++    unsigned long long regs[32][2];
++    unsigned long long fcc;
++    unsigned long long fcsr;
++  };
++/* LASX context */
++#define LASX_CTX_MAGIC 0x41535801
++#define LASX_CTX_ALIGN 32
++  struct lasx_context
++  {
++    unsigned long long regs[32][4];
++    unsigned long long fcc;
++    unsigned long long fcsr;
++  };
++
++  struct ucontext_t ow_ctx;
++
++  struct nw_ucontext *nw_ctx = ucontext;
++
++  ow_ctx.__uc_flags = nw_ctx->uc_flags;
++  ow_ctx.uc_link = NULL;
++  ow_ctx.uc_stack = nw_ctx->uc_stack;
++  ow_ctx.uc_sigmask = nw_ctx->uc_sigmask;
++
++  ow_ctx.uc_mcontext.__pc = nw_ctx->uc_mcontext.sc_pc;
++  memcpy (&ow_ctx.uc_mcontext.__gregs, &nw_ctx->uc_mcontext.sc_regs,
++          sizeof (ow_ctx.uc_mcontext.__gregs));
++  ow_ctx.uc_mcontext.__flags = nw_ctx->uc_mcontext.sc_flags;
++  ow_ctx.uc_mcontext.__fcsr = 0;
++  ow_ctx.uc_mcontext.__vcsr = 0;
++  ow_ctx.uc_mcontext.__fcc = 0;
++  memset (&ow_ctx.uc_mcontext.__fpregs, 0,
++          sizeof (ow_ctx.uc_mcontext.__fpregs));
++
++  int have_fpu = 0, have_lsx = 0, have_lasx = 0;
++  void *fp_ctx_p = NULL;
++  struct nw_sctx_info *extinfo = (void *)&nw_ctx->uc_mcontext.sc_extcontext;
++  while (extinfo->magic)
++    {
++      switch (extinfo->magic)
++        {
++        case FPU_CTX_MAGIC:
++          {
++            struct fpu_context *fp_ctx = (void *)(extinfo + 1);
++            have_fpu = 1;
++            fp_ctx_p = fp_ctx;
++            ow_ctx.uc_mcontext.__fcsr = fp_ctx->fcsr;
++            ow_ctx.uc_mcontext.__fcc = fp_ctx->fcc;
++            for (int i = 0; i < 32; i++)
++              {
++                ow_ctx.uc_mcontext.__fpregs[i].__val64[0] = fp_ctx->regs[i];
++              }
++            break;
++          }
++        case LSX_CTX_MAGIC:
++          {
++            struct lsx_context *fp_ctx = (void *)(extinfo + 1);
++            have_lsx = 1;
++            fp_ctx_p = fp_ctx;
++            ow_ctx.uc_mcontext.__fcsr = fp_ctx->fcsr;
++            ow_ctx.uc_mcontext.__fcc = fp_ctx->fcc;
++            for (int i = 0; i < 32; i++)
++              {
++                ow_ctx.uc_mcontext.__fpregs[i].__val64[0] = fp_ctx->regs[i][0];
++                ow_ctx.uc_mcontext.__fpregs[i].__val64[1] = fp_ctx->regs[i][1];
++              }
++            break;
++          }
++        case LASX_CTX_MAGIC:
++          {
++            struct lasx_context *fp_ctx = (void *)(extinfo + 1);
++            have_lasx = 1;
++            fp_ctx_p = fp_ctx;
++            ow_ctx.uc_mcontext.__fcsr = fp_ctx->fcsr;
++            ow_ctx.uc_mcontext.__fcc = fp_ctx->fcc;
++            for (int i = 0; i < 32; i++)
++              {
++                ow_ctx.uc_mcontext.__fpregs[i].__val64[0] = fp_ctx->regs[i][0];
++                ow_ctx.uc_mcontext.__fpregs[i].__val64[1] = fp_ctx->regs[i][1];
++                ow_ctx.uc_mcontext.__fpregs[i].__val64[2] = fp_ctx->regs[i][2];
++                ow_ctx.uc_mcontext.__fpregs[i].__val64[3] = fp_ctx->regs[i][3];
++              }
++            break;
++          }
++        }
++      if (have_fpu || have_lsx || have_lasx)
++        {
++          break;
++        }
++      extinfo = (struct nw_sctx_info *)((void *)extinfo + extinfo->size);
++    }
++
++  real_handler (sig, info, &ow_ctx);
++
++  if (have_lasx)
++    {
++      struct lasx_context *fp_ctx = fp_ctx_p;
++      for (int i = 0; i < 32; i++)
++        {
++          fp_ctx->regs[i][0] = ow_ctx.uc_mcontext.__fpregs[i].__val64[0];
++          fp_ctx->regs[i][1] = ow_ctx.uc_mcontext.__fpregs[i].__val64[1];
++          fp_ctx->regs[i][2] = ow_ctx.uc_mcontext.__fpregs[i].__val64[2];
++          fp_ctx->regs[i][3] = ow_ctx.uc_mcontext.__fpregs[i].__val64[3];
++        }
++      fp_ctx->fcc = ow_ctx.uc_mcontext.__fcc;
++      fp_ctx->fcsr = ow_ctx.uc_mcontext.__fcsr;
++    }
++  else if (have_lsx)
++    {
++      struct lsx_context *fp_ctx = fp_ctx_p;
++      for (int i = 0; i < 32; i++)
++        {
++          fp_ctx->regs[i][0] = ow_ctx.uc_mcontext.__fpregs[i].__val64[0];
++          fp_ctx->regs[i][1] = ow_ctx.uc_mcontext.__fpregs[i].__val64[1];
++        }
++      fp_ctx->fcc = ow_ctx.uc_mcontext.__fcc;
++      fp_ctx->fcsr = ow_ctx.uc_mcontext.__fcsr;
++    }
++  else if (have_fpu)
++    {
++      struct fpu_context *fp_ctx = fp_ctx_p;
++      for (int i = 0; i < 32; i++)
++        {
++          fp_ctx->regs[i] = ow_ctx.uc_mcontext.__fpregs[i].__val64[0];
++        }
++      fp_ctx->fcc = ow_ctx.uc_mcontext.__fcc;
++      fp_ctx->fcsr = ow_ctx.uc_mcontext.__fcsr;
++    }
++  nw_ctx->uc_mcontext.sc_flags = ow_ctx.uc_mcontext.__flags;
++  memcpy (&nw_ctx->uc_mcontext.sc_regs, &ow_ctx.uc_mcontext.__gregs,
++          sizeof (nw_ctx->uc_mcontext.sc_regs));
++  nw_ctx->uc_mcontext.sc_pc = ow_ctx.uc_mcontext.__pc;
++  nw_ctx->uc_sigmask = ow_ctx.uc_sigmask;
++  nw_ctx->uc_stack = ow_ctx.uc_stack;
++  nw_ctx->uc_flags = ow_ctx.__uc_flags;
++}
++
++static inline int
++is_fake_handler (__linx_sighandler_t handler)
++{
++  return handler == (__linx_sighandler_t)SIG_ERR
++         || handler == (__linx_sighandler_t)SIG_DFL
++         || handler == (__linx_sighandler_t)SIG_IGN
++#ifdef SIG_HOLD
++         || handler == (__linx_sighandler_t)SIG_HOLD
++#endif
++      ;
++}
++
++#define LA_INS_PCADDI 0x18000000u
++#define LA_INS_LD_D 0x28C00000u
++#define LA_INS_JIRL 0x4C000000u
++#define LA_REG_ZERO 0
++#define LA_REG_T0 12
++#define LA_REG_RA 1
++#define LA_REG_A0 4
++#define LA_REG_A1 5
++#define LA_REG_A2 6
++#define LA_REG_A3 7
++#define LA_REG_A4 8
++#define LA_REG_A5 9
++
++#define SIGHANDLER_PROG_NR_INS 4
++struct __attribute__ ((__packed__)) sighandler_prog
++{
++  unsigned int magic[2];
++  unsigned int prog[SIGHANDLER_PROG_NR_INS];
++
++  struct sighandler_prog_data
++  {
++    unsigned long our_handler_addr;
++    unsigned long orig_handler_addr;
++  } data;
++} const prog_tmpl = {
++  .magic = {U"开刀"},
++  .prog = {
++    /* pcaddi $t0, SIGHANDLER_PROG_NR_INS */
++    LA_INS_PCADDI | LA_REG_T0 | (SIGHANDLER_PROG_NR_INS << 5),
++    /* ld.d $a3, $t0, orig_handler_addr */
++    LA_INS_LD_D | LA_REG_A3 | (LA_REG_T0 << 5) | (offsetof (struct sighandler_prog_data, orig_handler_addr) << 10),
++    /* ld.d $t0, $t0, our_handler_addr */
++    LA_INS_LD_D | LA_REG_T0 | (LA_REG_T0 << 5) | (offsetof (struct sighandler_prog_data, our_handler_addr) << 10),
++    /* jirl $zero, $t0, 0 */
++    LA_INS_JIRL | LA_REG_ZERO | (LA_REG_T0 << 5) | (0 << 10),
++  },
++  .data = {
++    .our_handler_addr = (unsigned long)custom_handler,
++  }
++};
++
++#define PROG_POOL_SIZE 2
++#define LA_PAGE_SIZE (16 * 1024)
++
++static_assert (sizeof (struct sighandler_prog) <= LA_PAGE_SIZE,
++               "sighandler_prog too large");
++
++struct sighandler_prog_pool
++{
++  struct sighandler_prog *prog[PROG_POOL_SIZE];
++  size_t pos;
++#if !IS_IN(rtld)
++  __libc_lock_define (, lock);
++#endif
++};
++
++static void
++destroy_handler (struct sighandler_prog *prog)
++{
++  __munmap (prog, LA_PAGE_SIZE);
++}
++
++static struct sighandler_prog *
++alloc_handler (__linx_sighandler_t handler)
++{
++  struct sighandler_prog *prog
++      = __mmap (NULL, LA_PAGE_SIZE, PROT_READ | PROT_WRITE,
++                MAP_ANON | MAP_PRIVATE, -1, 0);
++  if (__glibc_unlikely (prog == MAP_FAILED))
++    {
++      return NULL;
++    }
++  memcpy (prog, &prog_tmpl, sizeof (struct sighandler_prog));
++  prog->data.orig_handler_addr = (unsigned long)handler;
++
++  int rc = __mprotect (prog, LA_PAGE_SIZE, PROT_READ | PROT_EXEC);
++  if (rc < 0)
++    {
++      destroy_handler (prog);
++      prog = NULL;
++    }
++  return prog;
++}
++
++static void
++store_handler (struct sighandler_prog_pool *pool, struct sighandler_prog *prog)
++{
++  struct sighandler_prog *orig_prog;
++  orig_prog = pool->prog[pool->pos];
++  pool->prog[pool->pos] = prog;
++  pool->pos = (pool->pos + 1) % PROG_POOL_SIZE;
++  if (orig_prog)
++    {
++      destroy_handler (orig_prog);
++    }
++}
++
++/* If ACT is not NULL, change the action for SIG to *ACT.
++   If OACT is not NULL, put the old action for SIG in *OACT.  */
++int
++__libc_sigaction (int sig, const struct sigaction *act, struct sigaction *oact)
++{
++  int result = 0, result2 = 0;
++
++  struct kernel_sigaction kact, koact;
++
++  static struct sighandler_prog_pool prog_pool[_NW_NSIG]
++      = { [0 ... _NW_NSIG - 1] = {
++              .prog = { NULL },
++              .pos = 0,
++#if !IS_IN(rtld)
++              .lock = _LIBC_LOCK_INITIALIZER,
++#endif
++          } };
++
++  sigset_t saveset, allset;
++  struct sighandler_prog *old_prog = NULL;
++  struct sighandler_prog *new_prog = NULL;
++
++  if (sig <= 0 || sig >= _NSIG)
++    {
++      __set_errno (EINVAL);
++      return -1;
++    }
++  else if (sig >= _NW_NSIG)
++    {
++      if (oact)
++        {
++          memset (oact, 0, sizeof (struct sigaction));
++          oact->sa_handler = SIG_IGN;
++        }
++      return 0;
++    }
++
++  if (act)
++    {
++      if (!is_fake_handler ((__linx_sighandler_t)(act)->sa_handler))
++        {
++          new_prog = alloc_handler ((__linx_sighandler_t)(act)->sa_handler);
++          if (!new_prog)
++            {
++              return -1;
++            }
++          kact.k_sa_handler = (__sighandler_t)new_prog;
++        }
++      else
++        {
++          kact.k_sa_handler = act->sa_handler;
++        }
++      memcpy (&kact.sa_mask, &act->sa_mask, sizeof (sigset_t));
++      kact.sa_flags = act->sa_flags;
++      SET_SA_RESTORER (&kact, act);
++    }
++
++  __sigfillset (&allset);
++  result = INLINE_SYSCALL_CALL (rt_sigprocmask, SIG_BLOCK, &allset, &saveset,
++                                _NW_NSIG / 8);
++  if (result < 0)
++    return result;
++
++#if !IS_IN(rtld)
++  __libc_lock_lock (prog_pool[sig].lock);
++#endif
++
++  /* XXX The size argument hopefully will have to be changed to the
++     real size of the user-level sigset_t.  */
++  result = INLINE_SYSCALL_CALL (rt_sigaction, sig, act ? &kact : NULL,
++                                oact ? &koact : NULL, STUB (act) _NW_NSIG / 8);
++
++  if (result >= 0 && new_prog)
++    {
++      store_handler (&prog_pool[sig], new_prog);
++    }
++  if (oact && result >= 0)
++    {
++      if (!is_fake_handler ((__linx_sighandler_t)koact.k_sa_handler))
++        {
++          old_prog = (struct sighandler_prog *)koact.k_sa_handler;
++          if (memcmp (old_prog->magic, prog_tmpl.magic,
++                      sizeof (prog_tmpl.magic))
++              == 0)
++            {
++              oact->sa_handler
++                  = (__sighandler_t)old_prog->data.orig_handler_addr;
++            }
++          else
++            {
++              oact->sa_handler = koact.k_sa_handler;
++            }
++        }
++      else
++        {
++          oact->sa_handler = koact.k_sa_handler;
++        }
++      memcpy (&oact->sa_mask, &koact.sa_mask, _NW_NSIG / 8);
++      memset ((void *)&oact->sa_mask + (_NW_NSIG / 8), 0,
++              (_NSIG - _NW_NSIG) / 8);
++      oact->sa_flags = koact.sa_flags;
++      RESET_SA_RESTORER (oact, &koact);
++    }
++  if (result < 0)
++    {
++      if (new_prog)
++        {
++          destroy_handler (new_prog);
++        }
++    }
++
++out_unlock:
++#if !IS_IN(rtld)
++  __libc_lock_unlock (prog_pool[sig].lock);
++#endif
++
++out_unblock:
++  result2 = INLINE_SYSCALL_CALL (rt_sigprocmask, SIG_SETMASK, &saveset, NULL,
++                                 _NW_NSIG / 8);
++  if (result2 < 0)
++    result = result2;
++
++  return result;
++}
++libc_hidden_def (__libc_sigaction)
++
++#include <nptl/sigaction.c>
+-- 
+2.39.0
+

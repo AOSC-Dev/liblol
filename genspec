@@ -111,20 +111,3 @@ done < manifest
 
 exec 3>&-
 mv spec.new spec
-
-gen_def_cache(){
-    local generator="$1"
-    local cache_name="$2"
-
-    exec 3> "autobuild/additional-files/$cache_name.cache.in.new"
-    "$generator" | sed "s#/usr/lib/loongarch64-linux-gnu#@libdir@#g" >&3
-    exec 3>&-
-    mv "autobuild/additional-files/$cache_name.cache.in.new" "autobuild/additional-files/$cache_name.cache.in"
-}
-
-gen_def_cache "/usr/lib/loongarch64-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders" "gdk-pixbuf-query-loaders"
-HOME='~' gen_def_cache "/usr/lib/loongarch64-linux-gnu/libgtk2.0-0/gtk-query-immodules-2.0" "gtk2-immodules"
-gen_def_cache "/usr/lib/loongarch64-linux-gnu/libgtk-3-0/gtk-query-immodules-3.0" "gtk3-immodules"
-
-/usr/lib/loongarch64-linux-gnu/glib-2.0/gio-querymodules /usr/lib/loongarch64-linux-gnu/gio/modules
-cp -v "/usr/lib/loongarch64-linux-gnu/gio/modules/giomodule.cache" "autobuild/additional-files/giomodule.cache.in"

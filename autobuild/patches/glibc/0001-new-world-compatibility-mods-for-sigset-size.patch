@@ -1,0 +1,368 @@
+From 2dc84bf07863a2cc0e7505d84bc2b7e11bc5cd9c Mon Sep 17 00:00:00 2001
+From: Miao Wang <shankerwangmiao@gmail.com>
+Date: Fri, 29 Dec 2023 03:40:18 +0800
+Subject: [PATCH 1/3] new world compatibility mods for sigset size
+
+---
+ sysdeps/loongarch/nptl/nptl-init.c            |  6 ++
+ sysdeps/loongarch/nptl/pthread_create.c       |  6 ++
+ sysdeps/unix/sysv/linux/loongarch/aio_misc.h  |  6 ++
+ .../unix/sysv/linux/loongarch/bits/signum.h   |  2 +
+ .../unix/sysv/linux/loongarch/epoll_pwait.c   |  6 ++
+ .../sysv/linux/loongarch/internal-signals.h   |  6 ++
+ sysdeps/unix/sysv/linux/loongarch/ppoll.c     |  6 ++
+ sysdeps/unix/sysv/linux/loongarch/pselect.c   |  6 ++
+ .../sysv/linux/loongarch/pthread_sigmask.c    | 61 +++++++++++++++++++
+ sysdeps/unix/sysv/linux/loongarch/signalfd.c  |  6 ++
+ .../unix/sysv/linux/loongarch/sigpending.c    | 35 +++++++++++
+ .../unix/sysv/linux/loongarch/sigprocmask.c   | 57 +++++++++++++++++
+ .../unix/sysv/linux/loongarch/sigsuspend.c    |  6 ++
+ .../unix/sysv/linux/loongarch/sigtimedwait.c  |  6 ++
+ .../sysv/linux/loongarch/timer_routines.c     |  6 ++
+ .../unix/sysv/linux/loongarch/ucontext_i.sym  |  2 +-
+ 16 files changed, 222 insertions(+), 1 deletion(-)
+ create mode 100644 sysdeps/loongarch/nptl/nptl-init.c
+ create mode 100644 sysdeps/loongarch/nptl/pthread_create.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/aio_misc.h
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/epoll_pwait.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/internal-signals.h
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/ppoll.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/pselect.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/pthread_sigmask.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/signalfd.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/sigpending.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/sigprocmask.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/sigsuspend.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/sigtimedwait.c
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/timer_routines.c
+
+diff --git a/sysdeps/loongarch/nptl/nptl-init.c b/sysdeps/loongarch/nptl/nptl-init.c
+new file mode 100644
+index 0000000000..372d470f53
+--- /dev/null
++++ b/sysdeps/loongarch/nptl/nptl-init.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include_next <nptl/nptl-init.c>
+diff --git a/sysdeps/loongarch/nptl/pthread_create.c b/sysdeps/loongarch/nptl/pthread_create.c
+new file mode 100644
+index 0000000000..5baa8f597d
+--- /dev/null
++++ b/sysdeps/loongarch/nptl/pthread_create.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include_next <nptl/pthread_create.c>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/aio_misc.h b/sysdeps/unix/sysv/linux/loongarch/aio_misc.h
+new file mode 100644
+index 0000000000..951c1846c0
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/aio_misc.h
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/aio-misc.h>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/bits/signum.h b/sysdeps/unix/sysv/linux/loongarch/bits/signum.h
+index 3cad0b197f..445c486457 100644
+--- a/sysdeps/unix/sysv/linux/loongarch/bits/signum.h
++++ b/sysdeps/unix/sysv/linux/loongarch/bits/signum.h
+@@ -55,4 +55,6 @@
+ #undef	__SIGRTMAX
+ #define __SIGRTMAX	127
+ 
++#define _NW_NSIG        64
++
+ #endif	/* <signal.h> included.  */
+diff --git a/sysdeps/unix/sysv/linux/loongarch/epoll_pwait.c b/sysdeps/unix/sysv/linux/loongarch/epoll_pwait.c
+new file mode 100644
+index 0000000000..3613db7553
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/epoll_pwait.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/epoll_pwait.c>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/internal-signals.h b/sysdeps/unix/sysv/linux/loongarch/internal-signals.h
+new file mode 100644
+index 0000000000..139d6f25ca
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/internal-signals.h
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/internal-signals.h>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/ppoll.c b/sysdeps/unix/sysv/linux/loongarch/ppoll.c
+new file mode 100644
+index 0000000000..ab7b22250b
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/ppoll.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/ppoll.c>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/pselect.c b/sysdeps/unix/sysv/linux/loongarch/pselect.c
+new file mode 100644
+index 0000000000..7fc3ee7124
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/pselect.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/pselect.c>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/pthread_sigmask.c b/sysdeps/unix/sysv/linux/loongarch/pthread_sigmask.c
+new file mode 100644
+index 0000000000..c44ea32ae9
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/pthread_sigmask.c
+@@ -0,0 +1,61 @@
++/* Copyright (C) 2002-2018 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <errno.h>
++#include <signal.h>
++#include <pthreadP.h>
++#include <sysdep.h>
++
++
++int
++pthread_sigmask (int how, const sigset_t *newmask, sigset_t *oldmask)
++{
++  sigset_t local_newmask;
++
++  /* The only thing we have to make sure here is that SIGCANCEL and
++     SIGSETXID is not blocked.  */
++  if (newmask != NULL
++      && (__builtin_expect (__sigismember (newmask, SIGCANCEL), 0)
++	  || __builtin_expect (__sigismember (newmask, SIGSETXID), 0)))
++    {
++      local_newmask = *newmask;
++      __sigdelset (&local_newmask, SIGCANCEL);
++      __sigdelset (&local_newmask, SIGSETXID);
++      newmask = &local_newmask;
++    }
++
++#ifdef INTERNAL_SYSCALL
++  /* We know that realtime signals are available if NPTL is used.  */
++  INTERNAL_SYSCALL_DECL (err);
++  int result = INTERNAL_SYSCALL (rt_sigprocmask, err, 4, how, newmask,
++				 oldmask, _NW_NSIG / 8);
++
++  int rc = (INTERNAL_SYSCALL_ERROR_P (result, err)
++	  ? INTERNAL_SYSCALL_ERRNO (result, err)
++	  : 0);
++  if (rc < 0){
++    return rc;
++  }
++  if (oldmask) {
++    memset((void *)oldmask + _NW_NSIG / 8, 0, (_NSIG - _NW_NSIG) / 8);
++  }
++  return rc;
++#else
++  return sigprocmask (how, newmask, oldmask) == -1 ? errno : 0;
++#endif
++}
+diff --git a/sysdeps/unix/sysv/linux/loongarch/signalfd.c b/sysdeps/unix/sysv/linux/loongarch/signalfd.c
+new file mode 100644
+index 0000000000..d1467d447b
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/signalfd.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/signalfd.c>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/sigpending.c b/sysdeps/unix/sysv/linux/loongarch/sigpending.c
+new file mode 100644
+index 0000000000..307c7ae59e
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/sigpending.c
+@@ -0,0 +1,35 @@
++/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <errno.h>
++#include <signal.h>
++#include <unistd.h>
++
++#include <sysdep.h>
++#include <sys/syscall.h>
++
++
++int
++sigpending (sigset_t *set)
++{
++  int rc = INLINE_SYSCALL (rt_sigpending, 2, set, _NW_NSIG / 8);
++  if (rc < 0){
++    return rc;
++  }
++  memset((void *)set + _NW_NSIG / 8, 0, (_NSIG - _NW_NSIG) / 8);
++  return rc;
++}
+diff --git a/sysdeps/unix/sysv/linux/loongarch/sigprocmask.c b/sysdeps/unix/sysv/linux/loongarch/sigprocmask.c
+new file mode 100644
+index 0000000000..3af1c2d7b8
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/sigprocmask.c
+@@ -0,0 +1,57 @@
++/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <errno.h>
++#include <signal.h>
++#include <string.h>  /* Needed for string function builtin redirection.  */
++#include <unistd.h>
++
++#include <sysdep.h>
++#include <sys/syscall.h>
++
++#include <nptl/pthreadP.h>              /* SIGCANCEL, SIGSETXID */
++
++
++/* Get and/or change the set of blocked signals.  */
++int
++__sigprocmask (int how, const sigset_t *set, sigset_t *oset)
++{
++  sigset_t local_newmask;
++
++  /* The only thing we have to make sure here is that SIGCANCEL and
++     SIGSETXID are not blocked.  */
++  if (set != NULL
++      && (__builtin_expect (__sigismember (set, SIGCANCEL), 0)
++	  || __builtin_expect (__sigismember (set, SIGSETXID), 0)))
++    {
++      local_newmask = *set;
++      __sigdelset (&local_newmask, SIGCANCEL);
++      __sigdelset (&local_newmask, SIGSETXID);
++      set = &local_newmask;
++    }
++
++  int rc = INLINE_SYSCALL (rt_sigprocmask, 4, how, set, oset, _NSIG / 8);
++  if ( rc < 0 ){
++    return rc;
++  }
++  if (oset){
++    memset((void *)set + _NW_NSIG / 8, 0, (_NSIG - _NW_NSIG) / 8);
++  }
++  return rc;
++}
++libc_hidden_def (__sigprocmask)
++weak_alias (__sigprocmask, sigprocmask)
+diff --git a/sysdeps/unix/sysv/linux/loongarch/sigsuspend.c b/sysdeps/unix/sysv/linux/loongarch/sigsuspend.c
+new file mode 100644
+index 0000000000..2e14b72456
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/sigsuspend.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/sigsuspend.c>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/sigtimedwait.c b/sysdeps/unix/sysv/linux/loongarch/sigtimedwait.c
+new file mode 100644
+index 0000000000..b939971328
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/sigtimedwait.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/sigtimedwait.c>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/timer_routines.c b/sysdeps/unix/sysv/linux/loongarch/timer_routines.c
+new file mode 100644
+index 0000000000..c49255ab75
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/timer_routines.c
+@@ -0,0 +1,6 @@
++#include <signal.h>
++
++#undef _NSIG
++#define _NSIG _NW_NSIG
++
++#include <sysdeps/unix/sysv/linux/timer_routines.c>
+diff --git a/sysdeps/unix/sysv/linux/loongarch/ucontext_i.sym b/sysdeps/unix/sysv/linux/loongarch/ucontext_i.sym
+index d7f612fea2..1fce94fc46 100644
+--- a/sysdeps/unix/sysv/linux/loongarch/ucontext_i.sym
++++ b/sysdeps/unix/sysv/linux/loongarch/ucontext_i.sym
+@@ -8,7 +8,7 @@
+ SIG_BLOCK
+ SIG_SETMASK
+ 
+-_NSIG8				(_NSIG / 8)
++_NSIG8				(_NW_NSIG / 8)
+ 
+ -- Offsets of the fields in the ucontext_t structure.
+ #define ucontext(member)	offsetof (ucontext_t, member)
+-- 
+2.39.0
+

@@ -1,1 +1,3 @@
-loongarch_nw.patch
+0001-new-world-compatibility-mods-for-sigset-size.patch
+0002-impl-sigaction-with-new-world-ucontext-compat.patch
+0003-new-world-compatibility-mods-for-removing-fstat-newf.patch
