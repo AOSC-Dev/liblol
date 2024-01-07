@@ -231,7 +231,12 @@ EOF
             ..=../ \
             objdir="$PWD"
     env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
-        make "$PWD/libc.so" "nptl/subdir_lib"
+        make "$PWD/libc.so"
+    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
+        make -C "$BLDDIR/src/glibc/nptl" "$PWD/nptl/libpthread.so" \
+            subdir=nptl \
+            ..=../ \
+            objdir="$PWD"
     env -i "PATH=$new_PATH" "TERM=$TERM" \
         make elf/ldso_install "$PKGDIR$LOLPREFIX/lib/$OWTARGET/libc.so.6" \
             DESTDIR="$PKGDIR"
