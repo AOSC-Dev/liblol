@@ -1,4 +1,4 @@
-From 8b1818a7bd14f6db96e662da17e01d8481117774 Mon Sep 17 00:00:00 2001
+From 82fcb66f0c98e8ded0cf34c7929545e770dc7c53 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 7 Jan 2024 04:19:42 +0800
 Subject: [PATCH 3/3] new world compatibility mods for removing fstat
@@ -6,14 +6,14 @@ Subject: [PATCH 3/3] new world compatibility mods for removing fstat
 
 ---
  sysdeps/unix/sysv/linux/loongarch/Makefile    |  3 +
- sysdeps/unix/sysv/linux/loongarch/fxstat.c    | 60 ++++++++++++
- sysdeps/unix/sysv/linux/loongarch/fxstatat.c  | 57 +++++++++++
- sysdeps/unix/sysv/linux/loongarch/lxstat.c    | 62 ++++++++++++
+ sysdeps/unix/sysv/linux/loongarch/fxstat.c    | 72 ++++++++++++++
+ sysdeps/unix/sysv/linux/loongarch/fxstatat.c  | 70 ++++++++++++++
+ sysdeps/unix/sysv/linux/loongarch/lxstat.c    | 74 +++++++++++++++
  sysdeps/unix/sysv/linux/loongarch/statx_cp.c  | 47 +++++++++
  sysdeps/unix/sysv/linux/loongarch/statx_cp.h  | 20 ++++
- sysdeps/unix/sysv/linux/loongarch/xstat.c     | 61 ++++++++++++
+ sysdeps/unix/sysv/linux/loongarch/xstat.c     | 73 ++++++++++++++
  sysdeps/unix/sysv/linux/loongarch/xstatconv.c | 95 +++++++++++++++++++
- 8 files changed, 405 insertions(+)
+ 8 files changed, 454 insertions(+)
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/fxstat.c
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/fxstatat.c
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/lxstat.c
@@ -35,10 +35,10 @@ index 6f049aa9ab..77a3bbce35 100644
 +endif
 diff --git a/sysdeps/unix/sysv/linux/loongarch/fxstat.c b/sysdeps/unix/sysv/linux/loongarch/fxstat.c
 new file mode 100644
-index 0000000000..a0df544f29
+index 0000000000..cfdf53fc49
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/loongarch/fxstat.c
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,72 @@
 +/* fxstat using old-style Unix fstat system call.
 +   Copyright (C) 1991-2018 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
@@ -85,10 +85,22 @@ index 0000000000..a0df544f29
 +
 +  struct stat64 kst64;
 +  struct statx tmp;
-+  int rc = INLINE_SYSCALL (statx, 5, fd, "", AT_EMPTY_PATH,
-+                           STATX_BASIC_STATS, &tmp);
-+  if (rc < 0)
-+    return rc;
++
++  INTERNAL_SYSCALL_DECL (err);
++  unsigned long sys_result = INTERNAL_SYSCALL (
++      statx, err, 5, fd, "", AT_EMPTY_PATH, STATX_BASIC_STATS, &tmp);
++  if (__builtin_expect (INTERNAL_SYSCALL_ERROR_P (sys_result, err), 0))
++    {
++      if (INTERNAL_SYSCALL_ERRNO (sys_result, err) == ENOSYS)
++        {
++          return INLINE_SYSCALL (fstat, 2, fd, buf);
++        }
++      else
++        {
++          __set_errno (INTERNAL_SYSCALL_ERRNO (sys_result, err));
++          return -1;
++        }
++    }
 +
 +  __cp_stat64_statx (&kst64, &tmp);
 +  return __xstat32_conv (vers, &kst64, buf);
@@ -101,10 +113,10 @@ index 0000000000..a0df544f29
 +hidden_ver (__fxstat, __fxstat64)
 diff --git a/sysdeps/unix/sysv/linux/loongarch/fxstatat.c b/sysdeps/unix/sysv/linux/loongarch/fxstatat.c
 new file mode 100644
-index 0000000000..ca6eb47199
+index 0000000000..4d6ba9ccb7
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/loongarch/fxstatat.c
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,70 @@
 +/* Copyright (C) 2005-2018 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
 +
@@ -150,10 +162,23 @@ index 0000000000..ca6eb47199
 +    }
 +  struct stat64 kst64;
 +  struct statx tmp;
-+  int rc = INLINE_SYSCALL (statx, 5, fd, file, AT_NO_AUTOMOUNT | flag,
-+                           STATX_BASIC_STATS, &tmp);
-+  if (rc < 0)
-+    return rc;
++
++  INTERNAL_SYSCALL_DECL (err);
++  unsigned long sys_result
++      = INTERNAL_SYSCALL (statx, err, 5, fd, file, AT_NO_AUTOMOUNT | flag,
++                          STATX_BASIC_STATS, &tmp);
++  if (__builtin_expect (INTERNAL_SYSCALL_ERROR_P (sys_result, err), 0))
++    {
++      if (INTERNAL_SYSCALL_ERRNO (sys_result, err) == ENOSYS)
++        {
++          return INLINE_SYSCALL (newfstatat, 4, fd, file, st, flag);
++        }
++      else
++        {
++          __set_errno (INTERNAL_SYSCALL_ERRNO (sys_result, err));
++          return -1;
++        }
++    }
 +
 +  __cp_stat64_statx (&kst64, &tmp);
 +  return __xstat32_conv (vers, &kst64, st);
@@ -164,10 +189,10 @@ index 0000000000..ca6eb47199
 +strong_alias (__fxstatat64, __GI___fxstatat64)
 diff --git a/sysdeps/unix/sysv/linux/loongarch/lxstat.c b/sysdeps/unix/sysv/linux/loongarch/lxstat.c
 new file mode 100644
-index 0000000000..dec1747ab1
+index 0000000000..868273be93
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/loongarch/lxstat.c
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,74 @@
 +/* Copyright (C) 2011-2018 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
 +   Contributed by Chris Metcalf <cmetcalf@tilera.com>, 2011.
@@ -212,12 +237,24 @@ index 0000000000..dec1747ab1
 +    }
 +  struct stat64 kst64;
 +  struct statx tmp;
-+  int rc = INLINE_SYSCALL (statx, 5, AT_FDCWD, name,
-+                           AT_NO_AUTOMOUNT | AT_SYMLINK_NOFOLLOW,
-+                           STATX_BASIC_STATS, &tmp);
 +
-+  if (rc < 0)
-+    return rc;
++  INTERNAL_SYSCALL_DECL (err);
++  unsigned long sys_result = INTERNAL_SYSCALL (
++      statx, err, 5, AT_FDCWD, name, AT_NO_AUTOMOUNT | AT_SYMLINK_NOFOLLOW,
++      STATX_BASIC_STATS, &tmp);
++  if (__builtin_expect (INTERNAL_SYSCALL_ERROR_P (sys_result, err), 0))
++    {
++      if (INTERNAL_SYSCALL_ERRNO (sys_result, err) == ENOSYS)
++        {
++          return INLINE_SYSCALL (newfstatat, 4, AT_FDCWD, name, buf,
++                                 AT_SYMLINK_NOFOLLOW);
++        }
++      else
++        {
++          __set_errno (INTERNAL_SYSCALL_ERRNO (sys_result, err));
++          return -1;
++        }
++    }
 +
 +  __cp_stat64_statx (&kst64, &tmp);
 +  return __xstat32_conv (vers, &kst64, buf);
@@ -311,10 +348,10 @@ index 0000000000..e755aa08cd
 +  attribute_hidden;
 diff --git a/sysdeps/unix/sysv/linux/loongarch/xstat.c b/sysdeps/unix/sysv/linux/loongarch/xstat.c
 new file mode 100644
-index 0000000000..9bfd2c8782
+index 0000000000..5bdb3f1fd9
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/loongarch/xstat.c
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,73 @@
 +/* Copyright (C) 2011-2018 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
 +   Contributed by Chris Metcalf <cmetcalf@tilera.com>, 2011.
@@ -360,10 +397,22 @@ index 0000000000..9bfd2c8782
 +
 +  struct stat64 kst64;
 +  struct statx tmp;
-+  int rc = INLINE_SYSCALL (statx, 5, AT_FDCWD, name, AT_NO_AUTOMOUNT,
-+                           STATX_BASIC_STATS, &tmp);
-+  if (rc < 0)
-+    return rc;
++
++  INTERNAL_SYSCALL_DECL (err);
++  unsigned long sys_result = INTERNAL_SYSCALL (
++      statx, err, 5, AT_FDCWD, name, AT_NO_AUTOMOUNT, STATX_BASIC_STATS, &tmp);
++  if (__builtin_expect (INTERNAL_SYSCALL_ERROR_P (sys_result, err), 0))
++    {
++      if (INTERNAL_SYSCALL_ERRNO (sys_result, err) == ENOSYS)
++        {
++          return INLINE_SYSCALL (newfstatat, 4, AT_FDCWD, name, buf, 0);
++        }
++      else
++        {
++          __set_errno (INTERNAL_SYSCALL_ERRNO (sys_result, err));
++          return -1;
++        }
++    }
 +
 +  __cp_stat64_statx (&kst64, &tmp);
 +  return __xstat32_conv (vers, &kst64, buf);
