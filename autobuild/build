@@ -213,7 +213,7 @@ BUILD_CFLAGS = -O2 -g -ffile-prefix-map=$BLDDIR=.
 LDFLAGS = -Wl,-O1,--sort-common,--as-needed -Wl,-build-id=sha1
 EOF
 
-    env -i "PATH=$new_PATH" \
+    env -i "PATH=$new_PATH" "TERM=$TERM" \
         "$BLDDIR/src/glibc/configure" \
             --target="$OWTARGET" \
             --host="$OWTARGET" \
@@ -223,19 +223,19 @@ EOF
             CC="$OWTARGET-gcc" \
             AR="$OWTARGET-ar" \
             LD="$OWTARGET-ld"
-    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" \
+    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
         make "$PWD/libc_pic.a"
-    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" \
+    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
         make -C "$BLDDIR/src/glibc/elf" "$PWD/elf/ld.so.1" \
             subdir=elf \
             ..=../ \
             objdir="$PWD"
-    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" \
+    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
         make "$PWD/libc.so" "nptl/subdir_lib"
-    env -i "PATH=$new_PATH" \
+    env -i "PATH=$new_PATH" "TERM=$TERM" \
         make elf/ldso_install "$PKGDIR$LOLPREFIX/lib/$OWTARGET/libc.so.6" \
             DESTDIR="$PKGDIR"
-    env -i "PATH=$new_PATH" \
+    env -i "PATH=$new_PATH" "TERM=$TERM" \
         make -C "$BLDDIR/src/glibc/nptl" \
             "$PKGDIR$LOLPREFIX/lib/$OWTARGET/libpthread.so" \
 	    subdir=nptl \
@@ -509,6 +509,7 @@ set_host_build_env() {
         "
         "PKG_CONFIG=pkg-config"
         "LT_SYS_LIBRARY_PATH=$LOLPREFIX/lib/$OWTARGET:$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu"
+        "TERM=$TERM"
     )
 }
 
