@@ -1,19 +1,19 @@
-From ca637f3efb1c1e74986153a27e794248e5e3c639 Mon Sep 17 00:00:00 2001
+From 9e30e7f24f3e9c94eafd5fa17b5069d0f8c12eea Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 7 Jan 2024 08:06:36 +0800
 Subject: [PATCH 2/3] impl sigaction with new world ucontext compat
 
 ---
- sysdeps/unix/sysv/linux/loongarch/sigaction.c | 480 ++++++++++++++++++
- 1 file changed, 480 insertions(+)
+ sysdeps/unix/sysv/linux/loongarch/sigaction.c | 479 ++++++++++++++++++
+ 1 file changed, 479 insertions(+)
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/sigaction.c
 
 diff --git a/sysdeps/unix/sysv/linux/loongarch/sigaction.c b/sysdeps/unix/sysv/linux/loongarch/sigaction.c
 new file mode 100644
-index 0000000000..439bb046cc
+index 0000000000..3025633b2c
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/loongarch/sigaction.c
-@@ -0,0 +1,480 @@
+@@ -0,0 +1,479 @@
 +/* Copyright (C) 1997-2018 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
 +
@@ -424,23 +424,38 @@ index 0000000000..439bb046cc
 +      SET_SA_RESTORER (&kact, act);
 +    }
 +
-+  __sigfillset (&allset);
-+  result = INLINE_SYSCALL_CALL (rt_sigprocmask, SIG_BLOCK, &allset, &saveset,
-+                                _NW_NSIG / 8);
-+  if (result < 0)
-+    return result;
++  if (new_prog)
++    {
++      __sigfillset (&allset);
++      result = INLINE_SYSCALL_CALL (rt_sigprocmask, SIG_BLOCK, &allset,
++                                    &saveset, _NW_NSIG / 8);
++      if (result < 0)
++        {
++          destroy_handler (new_prog);
++          return result;
++        }
 +
 +#if !IS_IN(rtld)
-+  __libc_lock_lock (prog_pool[sig].lock);
++      __libc_lock_lock (prog_pool[sig].lock);
 +#endif
++    }
 +
 +  /* XXX The size argument hopefully will have to be changed to the
 +     real size of the user-level sigset_t.  */
 +  result = INLINE_SYSCALL_CALL (rt_sigaction, sig, act ? &kact : NULL,
 +                                oact ? &koact : NULL, STUB (act) _NW_NSIG / 8);
 +
-+  if (oact && result >= 0)
++  if (result < 0)
 +    {
++      if (new_prog)
++        {
++          destroy_handler (new_prog);
++        }
++      goto out_unlock;
++    }
++  if (oact)
++    {
++      oact->sa_handler = koact.k_sa_handler;
 +      if (!is_fake_handler ((__linx_sighandler_t)koact.k_sa_handler))
 +        {
 +          old_prog = (struct sighandler_prog *)koact.k_sa_handler;
@@ -451,14 +466,6 @@ index 0000000000..439bb046cc
 +              oact->sa_handler
 +                  = (__sighandler_t)old_prog->data.orig_handler_addr;
 +            }
-+          else
-+            {
-+              oact->sa_handler = koact.k_sa_handler;
-+            }
-+        }
-+      else
-+        {
-+          oact->sa_handler = koact.k_sa_handler;
 +        }
 +      memcpy (&oact->sa_mask, &koact.sa_mask, _NW_NSIG / 8);
 +      memset ((void *)&oact->sa_mask + (_NW_NSIG / 8), 0,
@@ -466,29 +473,21 @@ index 0000000000..439bb046cc
 +      oact->sa_flags = koact.sa_flags;
 +      RESET_SA_RESTORER (oact, &koact);
 +    }
-+  if (result >= 0 && new_prog)
-+    {
-+      store_handler (&prog_pool[sig], new_prog);
-+    }
-+  if (result < 0)
-+    {
-+      if (new_prog)
-+        {
-+          destroy_handler (new_prog);
-+        }
-+    }
++  if (new_prog)
++    store_handler (&prog_pool[sig], new_prog);
 +
 +out_unlock:
++  if (new_prog)
++    {
 +#if !IS_IN(rtld)
-+  __libc_lock_unlock (prog_pool[sig].lock);
++      __libc_lock_unlock (prog_pool[sig].lock);
 +#endif
 +
-+out_unblock:
-+  result2 = INLINE_SYSCALL_CALL (rt_sigprocmask, SIG_SETMASK, &saveset, NULL,
-+                                 _NW_NSIG / 8);
-+  if (result2 < 0)
-+    result = result2;
-+
++      result2 = INLINE_SYSCALL_CALL (rt_sigprocmask, SIG_SETMASK, &saveset,
++                                     NULL, _NW_NSIG / 8);
++      if (result2 < 0)
++        result = result2;
++    }
 +  return result;
 +}
 +libc_hidden_def (__libc_sigaction)
