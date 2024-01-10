@@ -9,115 +9,6 @@ LOLPREFIX="/opt/lol"
 abinfo "Appending -O2 to CPPFLAGS to fix build ..."
 export CPPFLAGS="${CPPFLAGS} -O2"
 
-binutils_source() {
-    abinfo "Extracting Binutils source deb"
-    mkdir -p "$BLDDIR/unpack/binutils"
-    dpkg-deb --extract "$SRCDIR/binutils-source.deb" "$BLDDIR/unpack/binutils"
-    local BINUTILS_DIR="$BLDDIR/unpack/binutils/usr/src/binutils"
-    local BINUTILS_SRC_TAR=( "$BINUTILS_DIR"/binutils-*.xz )
-    local patch
-
-    abinfo "Setting up Binutils source tree ..."
-    abinfo "Unpacking Binutils source tar $BINUTILS_SRC_TAR ..."
-    mkdir -pv "$BLDDIR/src/binutils"
-    tar \
-        -C "$BLDDIR/src/binutils" \
-        -xvJ \
-        --strip-components=1 \
-        -f "$BINUTILS_SRC_TAR"
-}
-
-binutils_build() {
-    mkdir -pv "$BLDDIR/build/binutils"
-
-    pushd "$BLDDIR/build/binutils"
-    "$BLDDIR/src/binutils/configure" \
-        --target="$OWTARGET" \
-        --disable-werror \
-        --prefix="$LOLPREFIX" \
-        --program-prefix="$OWTARGET-"
-    make
-    mkdir -pv "$BLDDIR/toolchainroot"
-    make install \
-        DESTDIR="$BLDDIR/toolchainroot"
-    popd
-
-    [ -x "$BLDDIR/toolchainroot$LOLPREFIX/bin/$OWTARGET-ld" ]
-}
-
-gcc_source() {
-    local GCC_VER=8
-    abinfo "Extracting GCC sources ..."
-    mkdir -pv "$BLDDIR/unpack/gcc"
-    dpkg-deb \
-        --extract \
-        --verbose "$SRCDIR/gcc-$GCC_VER-source.deb" \
-        "$BLDDIR/unpack/gcc"
-    local GCC_DIR="$BLDDIR/unpack/gcc/usr/src/gcc-$GCC_VER"
-    local GCC_SRC_TAR=( "$GCC_DIR"/gcc-*.xz )
-    local patch
-
-    abinfo "Setting up GCC source tree ..."
-    abinfo "Unpacking GCC source tar $GCC_SRC_TAR ..."
-    mkdir -pv "$BLDDIR/src/gcc/src"
-    tar \
-        -C "$BLDDIR/src/gcc/src" \
-        -xvJ \
-        --strip-components=1 \
-        -f "$GCC_SRC_TAR"
-
-    abinfo "Applying patches ..."
-    while IFS= read -r patch; do
-        abinfo "Applying $patch ..."
-        patch -p 1 -d "$BLDDIR/src/gcc" \
-            < "$GCC_DIR/patches/$patch"
-    done < <(sed '/^ *#/d; s/ -p.*$//' "$GCC_DIR/patches/series")
-}
-
-gcc_build() {
-    mkdir -pv "$BLDDIR/build/gcc"
-
-    pushd "$BLDDIR/build/gcc"
-    local new_PATH="$PATH:$BLDDIR/toolchainroot/$LOLPREFIX/bin"
-    local PATH="$new_PATH"
-
-    "$BLDDIR/src/gcc/src/configure" \
-        --target="$OWTARGET" \
-        --disable-werror \
-        --prefix="$LOLPREFIX" \
-        --program-prefix="$OWTARGET-" \
-        --with-build-time-tools="$BLDDIR/toolchainroot/$LOLPREFIX/bin" \
-        --with-build-sysroot="$BLDDIR/toolchainroot" \
-        --enable-languages=c \
-        --enable-shared \
-        --without-included-gettext \
-        --enable-threads=posix \
-        --enable-nls \
-        --enable-clocale=gnu \
-        --with-default-libstdcxx-abi=new \
-        --enable-gnu-unique-object \
-        --disable-libitm \
-        --disable-libsanitizer \
-        --disable-libquadmath \
-        --disable-libquadmath-support \
-        --enable-plugin \
-        --with-system-zlib \
-        --enable-multiarch \
-        --disable-werror \
-        --with-arch=loongarch64 \
-        --with-abi=lp64 \
-        --enable-tls \
-        --disable-host-shared \
-        --disable-emultls \
-        --with-gcc-major-version-only
-    make all-gcc
-    make install-gcc \
-        DESTDIR="$BLDDIR/toolchainroot"
-    popd
-
-    [ -x "$BLDDIR/toolchainroot$LOLPREFIX/bin/$OWTARGET-gcc" ]
-}
-
 linux_libc_install() {
     abinfo "Extracting Linux API headers (linux-libc-dev) ..."
     mkdir -pv "$BLDDIR/unpack/linux-libc"
@@ -126,6 +17,7 @@ linux_libc_install() {
         "$BLDDIR/unpack/linux-libc"
 
     abinfo "Copying Linux API headers ..."
+    mkdir -p "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include/"
     cp -v -a "$BLDDIR/unpack/linux-libc/usr/include/." \
         "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include/"
     (
@@ -135,18 +27,6 @@ linux_libc_install() {
     )
 
     rmdir -v "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include/loongarch64-linux-gnu/"
-}
-
-libgcc_install() {
-    abinfo "Extracting GCC runtime (libgcc-dev) ..."
-    mkdir -pv "$BLDDIR/unpack/libgcc"
-    dpkg-deb \
-        --extract "$SRCDIR/libgcc-dev.deb" \
-        "$BLDDIR/unpack/libgcc"
-
-    abinfo "Copying GCC runtime ..."
-    cp -av "$BLDDIR/unpack/libgcc/usr/lib/gcc/loongarch64-linux-gnu/8/." \
-        "$BLDDIR/toolchainroot/$LOLPREFIX/lib/gcc/$OWTARGET/8/"
 }
 
 apply_source_patch_series() {
@@ -191,7 +71,7 @@ glibc_build() {
     mkdir -pv "$BLDDIR/build/glibc"
 
     pushd "$BLDDIR/build/glibc"
-    local new_PATH="$BLDDIR/make-bin/usr/bin:$PATH:$BLDDIR/toolchainroot/$LOLPREFIX/bin"
+    local new_PATH="$BLDDIR/make-bin/usr/bin:$PATH"
     local GLIBC_VER="2.28"
 
     cat > configparms <<EOF
@@ -220,13 +100,11 @@ EOF
             --disable-werror \
             --prefix="$LOLPREFIX" \
             --enable-obsolete-rpc \
-            CC="$OWTARGET-gcc" \
-            AR="$OWTARGET-ar" \
-            LD="$OWTARGET-ld"
+            --with-headers="$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include"
     env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
         make "$PWD/libc_pic.a"
     env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
-        make -C "$BLDDIR/src/glibc/elf" "$PWD/elf/ld.so.1" \
+        make -C "$BLDDIR/src/glibc/elf" "$PWD/elf/ld.so.1" "$PWD/elf/ldconfig" \
             subdir=elf \
             ..=../ \
             objdir="$PWD"
@@ -310,7 +188,7 @@ install_additional_libs() {
     rm -vf "$PKGDIR$LOLPREFIX/lib/$OWTARGET/glib-2.0/gio-launch-desktop"
     rm -vf "$PKGDIR$LOLPREFIX/lib/$OWTARGET/glib-2.0/glib-compile-schemas"
 
-    "$BLDDIR/build/glibc-build/elf/ldconfig" \
+    "$BLDDIR/build/glibc/elf/ldconfig" \
         -v \
         -r "$PKGDIR" \
         -C "$LOLPREFIX/etc/ld.so.cache" \
@@ -488,25 +366,99 @@ set_host_build_env() {
     ln -sfv /usr/share/gobject-introspection-1.0 \
         -t "$BLDDIR/build-root/usr/share/"
 
+    gen_host_build_flags
+}
+
+gen_host_build_flags() {
+    abinfo "Determining build gcc internal include dirs ..."
+
+    local gcc_inc_dirs=()
+    readarray -t gcc_inc_dirs < <(
+        LC_ALL=C gcc -S -x c /dev/null -o/dev/null -v 2>&1 >/dev/null | \
+            sed --quiet '/#include <...> search starts here:/,/End of search list./{/gcc/ {s/^ *//; p}}'
+    )
+    abinfo "detected: ${gcc_inc_dirs[*]}"
+
+    local gcc_inc_flags=()
+    for i in "${gcc_inc_dirs[@]}"; do
+        gcc_inc_flags+=("-isystem" "$i")
+    done
+    gcc_inc_flags+=( \
+        -isystem "$BLDDIR/build-root/usr/include/loongarch64-linux-gnu" \
+        -isystem "$BLDDIR/build-root/usr/include" \
+        -isystem "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include" \
+    )
+
+    local core_ld_flags=(\
+        "-L$BLDDIR/build-root/usr/lib/gcc/loongarch64-linux-gnu/8" \
+        "-L$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu" \
+        "-Wl,--rpath-link" "-Wl,$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu" \
+        "-Wl,--sysroot=$BLDDIR/build-root" \
+        "-Wl,--dynamic-linker=/lib64/ld.so.1" \
+        "-nostdinc" \
+        "-specs=$BLDDIR/build/gcc.spec" \
+    )
+
+    abinfo "Generating gcc spec file ..."
+
+    gcc -dumpspecs | \
+        sed '/^\*link_libgcc:/,+1{s/%D//;}' \
+            > "$BLDDIR/build/gcc.spec"
+
+    abinfo "Generating meson cross file ..."
+
+    cat > "$BLDDIR/build/cross-file.txt" << EOF
+[binaries]
+c = '$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-gcc'
+cpp = '$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-g++'
+ar = '$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-ar'
+strip = '$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-strip'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'loongarch64'
+cpu = 'loongarch64'
+endian = 'little'
+EOF
+
+    abinfo "Generating host tools wrapper script ..."
+
+    mkdir -p "$BLDDIR/toolchainroot/$LOLPREFIX/bin/"
+    cat > "$BLDDIR/toolchainroot/$LOLPREFIX/bin/host-tools" << EOF
+#!/bin/bash
+tool="\${0##*-}"
+case "\$tool" in
+    gcc | g++)
+        exec "\$tool" -nostdinc ${gcc_inc_flags[*]} ${core_ld_flags[*]} "\$@"
+        ;;
+    *)
+        exec "\$tool" "\$@"
+        ;;
+esac
+EOF
+    chmod +x "$BLDDIR/toolchainroot/$LOLPREFIX/bin/host-tools"
+    for i in gcc g++ ar strip; do
+        ln -svf host-tools "$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-$i"
+    done
+
+    local cc_ld_flags=( \
+        "${core_ld_flags[@]}" \
+        "-ffile-prefix-map=$BLDDIR=." \
+        "-Wl,-O1,--sort-common,--as-needed" "-Wl,-build-id=sha1" \
+        "-g" \
+    )
+
     HOST_BUILD_ENVS=(
         "PATH=$PATH:$BLDDIR/toolchainroot/$LOLPREFIX/bin"
         "CFLAGS=\
-            -pipe -O2 -g \
-            -I$BLDDIR/build-root/usr/include/loongarch64-linux-gnu \
-            -I$BLDDIR/build-root/usr/include \
-            -L$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu \
-            -Wl,--rpath-link -Wl,$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu \
-            --sysroot=$BLDDIR/build-root \
-            -ffile-prefix-map=$BLDDIR=. \
+            -pipe -O2 \
+            ${gcc_inc_flags[*]} \
+            ${cc_ld_flags[*]} \
         "
         "PKG_CONFIG_PATH=$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
         "PKG_CONFIG_SYSROOT_DIR=$BLDDIR/build-root"
         "LDFLAGS=\
-            -Wl,-O1,--sort-common,--as-needed -Wl,-build-id=sha1 \
-            -L$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu \
-            -Wl,--rpath-link -Wl,$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu \
-            --sysroot=$BLDDIR/build-root \
-            -ffile-prefix-map=$BLDDIR=. \
+            ${cc_ld_flags[*]} \
         "
         "ASFLAGS=\
             -pipe -O2 -g \
@@ -515,6 +467,8 @@ set_host_build_env() {
         "PKG_CONFIG=pkg-config"
         "LT_SYS_LIBRARY_PATH=$LOLPREFIX/lib/$OWTARGET:$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu"
         "TERM=$TERM"
+        "CC=gcc"
+        "CCLD=gcc"
     )
 }
 
@@ -537,19 +491,6 @@ host_gdk_pixbuf() {
     dpkg-source -x "$SRCDIR/gdk-pixbuf_"*.dsc "$BLDDIR/src/gdk-pixbuf"
 
     pushd "$BLDDIR/build/host-gdk-pixbuf"
-    cat > cross-file.txt << EOF
-[binaries]
-c = '${OWTARGET}-gcc'
-cpp = '${OWTARGET}g++'
-ar = '${OWTARGET}-ar'
-strip = '${OWTARGET}-strip'
-
-[host_machine]
-system = 'linux'
-cpu_family = 'loongarch64'
-cpu = 'loongarch64'
-endian = 'little'
-EOF
 
     abinfo "Configuring host gdk-pixbuf ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
@@ -560,7 +501,7 @@ EOF
             --sysconfdir=/etc \
             --localstatedir=/var \
             --libdir="lib/$OWTARGET" \
-            --cross-file cross-file.txt \
+            --cross-file "$BLDDIR/build/cross-file.txt" \
             -Dpython.bytecompile=-1 \
             -Dman=false \
             -Dauto_features=enabled \
@@ -698,19 +639,6 @@ host_glib2() {
         "glib2"
 
     pushd "$BLDDIR/build/host-glib2"
-    cat > cross-file.txt << EOF
-[binaries]
-c = '${OWTARGET}-gcc'
-cpp = '${OWTARGET}g++'
-ar = '${OWTARGET}-ar'
-strip = '${OWTARGET}-strip'
-
-[host_machine]
-system = 'linux'
-cpu_family = 'loongarch64'
-cpu = 'loongarch64'
-endian = 'little'
-EOF
 
     abinfo "Configuring host glib2 ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
@@ -732,7 +660,7 @@ EOF
             -Dselinux=true \
             -Dsystemtap=true \
             -Dxattr=true \
-            --cross-file cross-file.txt
+            --cross-file "$BLDDIR/build/cross-file.txt"
 
     abinfo "Building host glib2 ..."
     env -i "${HOST_BUILD_ENVS[@]}" \
@@ -792,22 +720,12 @@ install_hooks() {
     done
 }
 
-abinfo "Building Binutils ..."
-binutils_source
-binutils_build
-
-abinfo "Building build Glibc ..."
-build_glibc_build
-
-abinfo "Building GCC ..."
-gcc_source
-gcc_build
+if ! type abdie >/dev/null 2>&1; then
+    return 0
+fi
 
 abinfo "Install Linux API headers ..."
 linux_libc_install
-
-abinfo "Install GCC runtime ..."
-libgcc_install
 
 abinfo "Building GNU Make 4.3 ..."
 make_build
