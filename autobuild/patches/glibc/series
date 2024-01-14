@@ -7,3 +7,4 @@
 0007-add-more-pthread-symbols.patch
 0008-remove-clone3-for-compatibility-with-qq.patch
 0009-able-to-prepend-trusted-dirs.patch
+0010-Add-___brk_addr-symbol.patch

@@ -1,7 +1,7 @@
 From 00b87a67cd5fceafe6117fe7aaac0fb458b61150 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 15:51:49 +0800
-Subject: [PATCH 6/9] add syscall fallback for *stat(at)?
+Subject: [PATCH 06/10] add syscall fallback for *stat(at)?
 
 ---
  sysdeps/unix/sysv/linux/loongarch/fxstat64.c  | 67 ++++++++++++++++

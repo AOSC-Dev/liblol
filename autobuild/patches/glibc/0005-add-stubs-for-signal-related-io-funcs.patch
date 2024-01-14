@@ -1,7 +1,7 @@
 From 3117d391980e8406789cef2cfe09b0c852991869 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sat, 13 Jan 2024 07:38:04 +0800
-Subject: [PATCH 5/9] add  stubs for signal related io funcs
+Subject: [PATCH 05/10] add  stubs for signal related io funcs
 
 ---
  sysdeps/unix/sysv/linux/loongarch/epoll_pwait.c          | 1 +
