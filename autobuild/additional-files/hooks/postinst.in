@@ -1,52 +1,7 @@
 #!/bin/bash
 set -e -o pipefail
 
-
-GDK_PIXBUF_LOADERS_DIR=@prefix@/lib/@target@/gdk-pixbuf-2.0/2.10.0/loaders
-GDK_PIXBUF_UPDATER=@prefix@/lib/@target@/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders
-
-if [ -d "$GDK_PIXBUF_LOADERS_DIR" ]; then
-    echo "Updating gdk-pixbuf loaders cache..." >&2
-    if ! "$GDK_PIXBUF_UPDATER" --update-cache; then
-        echo "Failed to update gdk-pixbuf loaders cache" >&2
-        echo " while running '$GDK_PIXBUF_UPDATER --update-cache'" >&2
-    fi
-fi
-
-GTK2_IM_DIR=@prefix@/lib/@target@/gtk-2.0/2.10.0/immodules
-GTK2_IM_UPDATER=@prefix@/lib/@target@/libgtk2.0-0/gtk-query-immodules-2.0
-
-if [ -d "$GTK2_IM_DIR" ]; then
-    echo "Updating gtk2 immodules cache..." >&2
-    if ! "$GTK2_IM_UPDATER" --update-cache; then
-        echo "Failed to update gtk2 immodules cache" >&2
-        echo "  while running '$GTK2_IM_UPDATER --update-cache'" >&2
-    fi
-fi
-
-GTK3_IM_DIR=@prefix@/lib/@target@/gtk-3.0/3.0.0/immodules
-GTK3_IM_UPDATER=@prefix@/lib/@target@/libgtk-3-0/gtk-query-immodules-3.0
-
-if [ -d "$GTK3_IM_DIR" ]; then
-    echo "Updating gtk3 immodules cache..." >&2
-    if ! "$GTK3_IM_UPDATER" --update-cache; then
-        echo "Failed to update gtk3 immodules cache" >&2
-        echo "  while running '$GTK3_IM_UPDATER --update-cache'" >&2
-    fi
-fi
-
-GIO_MOD_DIR=@prefix@/lib/@target@/gio/modules
-GIO_MOD_UPDATER=@prefix@/lib/@target@/glib-2.0/gio-querymodules
-
-if [ -d "$GIO_MOD_DIR" ]; then
-    echo "Updating gio modules cache..." >&2
-    if ! "$GIO_MOD_UPDATER" "$GIO_MOD_DIR"; then
-        echo "Failed to update gio modules cache" >&2
-        echo "  while running '$GIO_MOD_UPDATER $GIO_MOD_DIR'" >&2
-    fi
-fi
-
-if ! systemd-detect-virt --container; then
+if ! systemd-detect-virt --container >/dev/null ; then
     echo "Loading the la_ow_syscall (old-world syscall compatibility) kernel module ..."
     modprobe la_ow_syscall || \
         echo "

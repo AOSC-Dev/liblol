@@ -1,0 +1,24 @@
+From f514ec845f07b3d6e5e329a64783438a11f1291d Mon Sep 17 00:00:00 2001
+From: Miao Wang <shankerwangmiao@gmail.com>
+Date: Sun, 14 Jan 2024 16:51:44 +0800
+Subject: [PATCH 8/9] remove clone3 for compatibility with qq
+
+---
+ sysdeps/unix/sysv/linux/loongarch/sysdep.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sysdeps/unix/sysv/linux/loongarch/sysdep.h b/sysdeps/unix/sysv/linux/loongarch/sysdep.h
+index e11cd865ce..5c532ecdff 100644
+--- a/sysdeps/unix/sysv/linux/loongarch/sysdep.h
++++ b/sysdeps/unix/sysv/linux/loongarch/sysdep.h
+@@ -121,6 +121,7 @@
+ #define HAVE_GETCPU_VSYSCALL "__vdso_getcpu"
+ 
+ #define HAVE_CLONE3_WRAPPER 1
++#undef HAVE_CLONE3_WRAPPER
+ 
+ #define INTERNAL_SYSCALL(name, nr, args...) \
+   internal_syscall##nr (SYS_ify (name), args)
+-- 
+2.39.0
+

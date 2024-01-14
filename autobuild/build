@@ -9,26 +9,6 @@ LOLPREFIX="/opt/lol"
 abinfo "Appending -O2 to CPPFLAGS to fix build ..."
 export CPPFLAGS="${CPPFLAGS} -O2"
 
-linux_libc_install() {
-    abinfo "Extracting Linux API headers (linux-libc-dev) ..."
-    mkdir -pv "$BLDDIR/unpack/linux-libc"
-    dpkg-deb \
-        --extract "$SRCDIR/linux-libc-dev.deb" \
-        "$BLDDIR/unpack/linux-libc"
-
-    abinfo "Copying Linux API headers ..."
-    mkdir -p "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include/"
-    cp -v -a "$BLDDIR/unpack/linux-libc/usr/include/." \
-        "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include/"
-    (
-        shopt -s dotglob
-        mv -v "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include/loongarch64-linux-gnu/"* \
-            "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include/"
-    )
-
-    rmdir -v "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include/loongarch64-linux-gnu/"
-}
-
 apply_source_patch_series() {
     local patch_path=$1
     local src_path=$2
@@ -45,22 +25,15 @@ apply_source_patch_series() {
 
 glibc_source() {
     abinfo "Extracting Glibc sources ..."
-    mkdir -pv "$BLDDIR/unpack/glibc"
-    dpkg-deb \
-        --extract "$SRCDIR/glibc-source.deb" \
-        "$BLDDIR/unpack/glibc"
-
-    local GLIBC_DIR="$BLDDIR/unpack/glibc/usr/src/glibc"
-    local GLIBC_SRC_TAR=( "$GLIBC_DIR"/glibc-*.xz )
 
     abinfo "Setting up Glibc source tree ..."
-    abinfo "Unpacking Glibc source tar $GLIBC_SRC_TAR ..."
+    abinfo "Unpacking Glibc source tar ..."
     mkdir -pv "$BLDDIR/src/glibc"
     tar \
         -C "$BLDDIR/src/glibc" \
         -xvJ \
         --strip-components=1 \
-        -f "$GLIBC_SRC_TAR"
+        -f "$SRCDIR/glibc.tar.xz"
     apply_source_patch_series \
         "$SRCDIR/autobuild/patches/glibc" \
         "$BLDDIR/src/glibc" \
@@ -71,21 +44,23 @@ glibc_build() {
     mkdir -pv "$BLDDIR/build/glibc"
 
     pushd "$BLDDIR/build/glibc"
-    local new_PATH="$BLDDIR/make-bin/usr/bin:$PATH"
-    local GLIBC_VER="2.28"
+    local GLIBC_VER="2.38"
 
     cat > configparms <<EOF
 install_root = \$(DESTDIR)
 exec_prefix = \${prefix}
 datarootdir = /usr/share
-libdir = \${exec_prefix}/lib/$OWTARGET
-slibdir = \${exec_prefix}/lib/$OWTARGET
+libdir = \${exec_prefix}/lib
+slibdir = \${exec_prefix}/lib
 extra_libdir = \${exec_prefix}/lib
 rtlddir = /lib64
 libexecdir = \${exec_prefix}/lib
 rootsbindir = \${exec_prefix}/sbin
 complocaledir = /usr/lib/locale
 localtime-file = /etc/localtime
+sysconfdir = $LOLPREFIX/etc
+user-defined-trusted-dirs-pre = $LOLPREFIX/support/lib/$OWTARGET
+user-defined-trusted-dirs = $LOLPREFIX/lib/$OWTARGET $LOLPREFIX/lib
 
 CFLAGS = -pipe -O2 -g -ffile-prefix-map=$BLDDIR=.
 ASFLAGS = -pipe -O2 -g -ffile-prefix-map=$BLDDIR=.
@@ -93,626 +68,100 @@ BUILD_CFLAGS = -O2 -g -ffile-prefix-map=$BLDDIR=.
 LDFLAGS = -Wl,-O1,--sort-common,--as-needed -Wl,-build-id=sha1
 EOF
 
-    env -i "PATH=$new_PATH" "TERM=$TERM" \
+    env -i "TERM=$TERM" "PATH=$PATH" \
         "$BLDDIR/src/glibc/configure" \
             --target="$OWTARGET" \
             --host="$OWTARGET" \
             --disable-werror \
-            --prefix="$LOLPREFIX" \
+            --prefix="/usr" \
             --enable-obsolete-rpc \
-            --with-headers="$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include"
-    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
-        make "$PWD/libc_pic.a"
-    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
-        make -C "$BLDDIR/src/glibc/elf" "$PWD/elf/ld.so.1" "$PWD/elf/ldconfig" \
-            subdir=elf \
-            ..=../ \
-            objdir="$PWD"
-    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
-        make "$PWD/libc.so"
-    env -i "PATH=$new_PATH" "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" \
-        make -C "$BLDDIR/src/glibc/nptl" "$PWD/nptl/libpthread.so" \
-            subdir=nptl \
-            ..=../ \
-            objdir="$PWD"
-    env -i "PATH=$new_PATH" "TERM=$TERM" \
-        make elf/ldso_install "$PKGDIR$LOLPREFIX/lib/$OWTARGET/libc.so.6" \
-            DESTDIR="$PKGDIR"
-    env -i "PATH=$new_PATH" "TERM=$TERM" \
-        make -C "$BLDDIR/src/glibc/nptl" \
-            "$PKGDIR$LOLPREFIX/lib/$OWTARGET/libpthread.so" \
-	    subdir=nptl \
-	    ..=../ \
-            objdir="$PWD" \
-	    DESTDIR="$PKGDIR"
+            --enable-crypt \
+
+    env -i "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" "PATH=$PATH" \
+        make "$PWD/libc.so.6"
+    local libs=( \
+        "elf/ld.so.1" \
+        "math/libm.so.6" \
+        "resolv/libresolv.so.2" \
+        "malloc/libc_malloc_debug.so.0" \
+        "nptl_db/libthread_db.so.1" \
+        "dlfcn/libdl.so.2" \
+        "locale/libBrokenLocale.so.1" \
+        "rt/librt.so.1" \
+        "crypt/libcrypt.so.1" \
+    )
+    local dir
+    local lib
+    for i in "nptl/libpthread.so.0" "${libs[@]}"; do
+        dir=$(dirname -- "$i")
+        lib=$(basename -- "$i")
+        env -i "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" "PATH=$PATH" \
+            make -C "$BLDDIR/src/glibc/$dir" \
+                "$PWD/$i" \
+                subdir="$dir" \
+                ..=../ \
+                objdir="$PWD"
+    done
+
+    abinfo "Patchelfing ..."
+
+    for i in "nptl/libpthread.so.0" "libc.so.6"; do
+        "$BLDDIR/build/patchelf/src/patchelf" \
+            --page-size "$(( 16 * 1024 ))" \
+            --remap-symvers "GLIBC_2.27=GLIBC_2.0,GLIBC_2.2,GLIBC_2.2.1,GLIBC_2.2.2,GLIBC_2.2.3,GLIBC_2.2.4,GLIBC_2.2.6,GLIBC_2.3,GLIBC_2.3.2,GLIBC_2.3.3,GLIBC_2.3.4,GLIBC_2.4,GLIBC_2.5,GLIBC_2.6,GLIBC_2.7,GLIBC_2.8,GLIBC_2.9,GLIBC_2.10,GLIBC_2.11,GLIBC_2.12,GLIBC_2.13,GLIBC_2.14,GLIBC_2.15,GLIBC_2.16,GLIBC_2.17,GLIBC_2.18,GLIBC_2.19,GLIBC_2.20,GLIBC_2.21,GLIBC_2.22,GLIBC_2.23,GLIBC_2.24,GLIBC_2.25,GLIBC_2.26,GLIBC_2.27,GLIBC_2.28" \
+            --also-remap-verneed \
+            "$i"
+    done
+
+    for i in "nptl/libpthread.so.0" "libc.so.6" "${libs[@]}"; do
+        "$BLDDIR/build/patchelf/src/patchelf" \
+            --page-size "$(( 16 * 1024 ))" \
+            --remap-symvers "GLIBC_2.36=GLIBC_2.27,GLIBC_2.28" \
+            --also-remap-verneed \
+            "$i"
+    done
+
+    abinfo "Installing ..."
+
+    mkdir -pv "$PKGDIR$LOLPREFIX/lib/$OWTARGET/"
+    for i in "libc.so.6" "nptl/libpthread.so.0" "${libs[@]}"; do
+        install -Dvm644 "$i" \
+            -t "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/"
+    done
+    chmod +x "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/ld.so.1"
 
     mkdir -pv "$PKGDIR/usr/lib" #/lib64 is /usr/lib on AOSC
-    ln -sfvr "$PKGDIR$LOLPREFIX/lib/$OWTARGET/ld-$GLIBC_VER.so" \
+    ln -sfvr "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/ld.so.1" \
         "$PKGDIR/usr/lib/ld.so.1"
     popd
-
-    [ -x "$PKGDIR$LOLPREFIX/lib/$OWTARGET/ld-$GLIBC_VER.so" ]
 }
 
-patch_elf_rpath() {
-    local lib=$1
-    local newrpath=$2
-    abinfo "Patching $lib ..."
-    patchelf \
-        --debug \
-        --page-size "$((16 * 1024))" \
-        --set-rpath "$newrpath" \
-        "$PKGDIR$LOLPREFIX/lib/$OWTARGET/$lib"
-    local newpath=$(patchelf --print-rpath "$PKGDIR$LOLPREFIX/lib/$OWTARGET/$lib")
-    if [ "$newrpath" != "$newpath" ]; then
-        abdie "Patch $lib unsuccessful"
-    fi
-}
-
-install_additional_libs() {
-    abinfo "Extracting extra runtime components ..."
-    mkdir -pv "$BLDDIR/unpack/add_libs"
-    for i in "$SRCDIR/dist_"*.deb; do
-        abinfo "Extracting $i ..."
-        dpkg-deb \
-            --extract "$i" \
-            "$BLDDIR/unpack/add_libs"
-    done
-
-    abinfo "Moving files to the correct prefix ..."
-    cp -nva "$BLDDIR/unpack/add_libs/lib/loongarch64-linux-gnu/." \
-        "$PKGDIR$LOLPREFIX/lib/$OWTARGET/"
-    cp -nva "$BLDDIR/unpack/add_libs/usr/lib/loongarch64-linux-gnu/." \
-        "$PKGDIR$LOLPREFIX/lib/$OWTARGET/"
-    rm -v "$PKGDIR$LOLPREFIX/lib/$OWTARGET/gconv/gconv-modules.cache"
-
-    abinfo "Configuring runtime ..."
-    iconvconfig \
-        --nostdlib \
-        --prefix="$PKGDIR" \
-        "$LOLPREFIX/lib/$OWTARGET/gconv/" \
-        -o "$PKGDIR$LOLPREFIX/lib/$OWTARGET/gconv/gconv-modules.cache"
-    mkdir -pv "$PKGDIR$LOLPREFIX/etc/ld.so.conf.d"
-    echo "include $LOLPREFIX/etc/ld.so.conf.d/*.conf" \
-        > "$PKGDIR$LOLPREFIX/etc/ld.so.conf"
-    echo "$LOLPREFIX/lib/$OWTARGET/libglvnd" \
-        > "$PKGDIR$LOLPREFIX/etc/ld.so.conf.d/10_gpudrv_path.conf"
-    echo "$LOLPREFIX/lib/$OWTARGET" \
-        > "$PKGDIR$LOLPREFIX/etc/ld.so.conf.d/$OWTARGET.conf"
-
-    patch_elf_rpath "libpulse.so.0" "$LOLPREFIX/lib/$OWTARGET/pulseaudio"
-    patch_elf_rpath "gio/modules/libgioremote-volume-monitor.so" "$LOLPREFIX/lib/$OWTARGET/gvfs"
-    patch_elf_rpath "gio/modules/libgvfsdbus.so" "$LOLPREFIX/lib/$OWTARGET/gvfs"
-
-    abinfo "Removing unnecessary glib2 files ..."
-    rm -vf "$PKGDIR$LOLPREFIX/lib/$OWTARGET/glib-2.0/gio-launch-desktop"
-    rm -vf "$PKGDIR$LOLPREFIX/lib/$OWTARGET/glib-2.0/glib-compile-schemas"
-
-    "$BLDDIR/build/glibc/elf/ldconfig" \
-        -v \
-        -r "$PKGDIR" \
-        -C "$LOLPREFIX/etc/ld.so.cache" \
-        -X \
-        -f "$LOLPREFIX/etc/ld.so.conf"
-
-    [ -f "$PKGDIR$LOLPREFIX/etc/ld.so.cache" ]
-}
-
-make_build() {
-    abinfo "Unpacking GNU Make 4.3 ..."
-    mkdir -pv "$BLDDIR/src/make"
+patchelf_build() {
+    abinfo "Unpacking patchelf ..."
+    mkdir -pv "$BLDDIR/src/patchelf"
     tar \
-        -C "$BLDDIR/src/make" \
+        -C "$BLDDIR/src/patchelf" \
         -xvz \
         --strip-components=1 \
-        -f "$SRCDIR/make.tar.gz"
+        -f "$SRCDIR/patchelf.tar.gz"
 
-    abinfo "Replacing config.* ..."
-    cp -v /usr/bin/{config.guess,config.sub} \
-        "$BLDDIR/src/make/build-aux/"
+    apply_source_patch_series \
+        "$SRCDIR/autobuild/patches/patchelf" \
+        "$BLDDIR/src/patchelf" \
+        "patchelf"
 
-    abinfo "Building GNU Make 4.3 ..."
-    mkdir -pv "$BLDDIR/build/make"
+    abinfo "Building patchelf ..."
 
-    pushd "$BLDDIR/build/make"
-    "$BLDDIR/src/make/configure" \
-        --disable-werror \
-        --prefix="/usr" \
-        --host="$ABHOST" \
-        --build="$ABBUILD"
+    mkdir -pv "$BLDDIR/build/patchelf"
+    pushd "$BLDDIR/build/patchelf"
+
+    "$BLDDIR/src/patchelf/configure"
     make
-    make install \
-        DESTDIR="$BLDDIR/make-bin"
-    popd
-
-    [ -x "$BLDDIR/make-bin/usr/bin/make" ]
-}
-
-build_glibc_build() {
-
-    abinfo "Unpacking Glibc 2.37 (build toolchain) ..."
-    mkdir -pv "$BLDDIR/src/glibc-build"
-    tar \
-        -C "$BLDDIR/src/glibc-build" \
-        -xvz \
-        --strip-components=1 \
-        -f "$SRCDIR/glibc-build.tar.gz"
-
-    abinfo "Building Glibc 2.37 (build toolchain) ..."
-    mkdir -pv "$BLDDIR/build/glibc-build"
-
-    pushd "$BLDDIR/build/glibc-build"
-    CPPFLAGS="$CPPFLAGS -U_FORTIFY_SOURCE" \
-    "$BLDDIR/src/glibc-build/configure" \
-        --disable-werror \
-        --prefix="$LOLPREFIX" \
-        --enable-obsolete-rpc
-    make "$PWD/libc.a"
-    make "$PWD/elf/ldconfig" \
-        subdir=elf \
-        -C "$BLDDIR/src/glibc-build/elf" \
-        ..=../ \
-        objdir="$PWD"
-    popd
-
-    [ -x "$BLDDIR/build/glibc-build/elf/ldconfig" ]
-}
-
-install_dbgsyms() {
-    local bldid
-    local symfile
-    bool $ABSTRIP || return 0
-    bool $ABSPLITDBG || return 0
-
-    for i in "$PKGDIR$LOLPREFIX/"**; do
-        if ! elf_iself "$i"; then
-            continue
-        fi
-        if bldid=$(elf_buildid_sha1 "$i"); then
-            if ! elf_has_debug "$i"; then
-                abinfo "$i does not contain debug symbols but has build-id record $bldid, attempting to locate debug symbol file ..."
-                symfile="$BLDDIR/unpack/add_libs/usr/lib/debug/.build-id/${bldid:0:2}/${bldid:2}.debug"
-
-                if [ ! -e "$symfile" ]; then
-                    abwarn "$i: missing debug symbol $symfile"
-                    continue
-                fi
-
-                abinfo "$i: Saving debug symbols from $symfile ..."
-                elf_install_symfile "$symfile" "$bldid" "${SYMDIR}"
-            fi
-        fi
-    done
-}
-
-install_copyright_docs() {
-    abinfo "Installing copyright documentation ..."
-    mkdir -pv "$PKGDIR/usr/share/doc/$PKGNAME"
-
-    install -Dvm644 "$BLDDIR/unpack/linux-libc/usr/share/doc/linux-libc-dev/copyright" \
-        -t "$PKGDIR/usr/share/doc/$PKGNAME/linux-libc-dev"
-    pushd "$BLDDIR/unpack/add_libs/usr/share/doc"
-    local dir
-    local dest
-    for dir in *; do
-        case $dir in
-            *-dbg | *-dbgsym)
-                dest="$SYMDIR/usr/share/doc/$PKGNAME"
-                ;;
-            *)
-                dest="$PKGDIR/usr/share/doc/$PKGNAME"
-                ;;
-        esac
-        if [ -L "$dir" ]; then
-            abinfo "$dir is a symlink"
-            mkdir -pv "$dest/"
-            cp -av "$dir" "$dest/"
-        elif [ -d "$dir" ]; then
-            if [ -f "$dir/copyright" ]; then
-                abinfo "Installing $dir/copyright ..."
-                install -Dvm644 "$dir/copyright" \
-                    -t "$dest/$dir"
-            fi
-        fi
-    done
-    popd
-}
-
-set_host_build_env() {
-    abinfo "Setting up environment for building host libs ..."
-    mkdir -pv "$BLDDIR/build-root"
-    mkdir -pv "$BLDDIR/build-root/usr/lib"
-    mkdir -pv "$BLDDIR/build-root/usr/lib64"
-    ln -sfv "usr/lib" "$BLDDIR/build-root/lib"
-    ln -sfv "usr/lib64" "$BLDDIR/build-root/lib64"
-
-    for i in "$SRCDIR/dist_dev_"*.deb "$SRCDIR/dev_"*.deb; do
-        abinfo "Extracting $i ..."
-        dpkg-deb \
-            --fsys-tarfile "$i" |\
-            tar -C "$BLDDIR/build-root" -x --keep-directory-symlink
-    done
-
-    local t;
-
-    abinfo "Fixing symlinks ..."
-    for i in "$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu/"*; do
-        if [ -L "$i" ]; then
-            t=$(readlink "$i" | sed --silent '/^\//{s@/lib/loongarch64-linux-gnu/@@; p}')
-            if [ -n "$t" ]; then
-                ln -svf "$t" "$i"
-            fi
-        fi
-    done
-
-    abinfo "Checking for absolute symlinks ..."
-
-    local have_abs_symlink=0
-    for i in "$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu/"*; do
-        if [ -L "$i" ]; then
-            t=$(readlink "$i")
-            if [ "${t:0:1}" = "/" ]; then
-                abworn "$i is an absolute symlink"
-                have_abs_symlink=1
-            fi
-        fi
-    done
-    if [ "$have_abs_symlink" -ne 0 ]; then
-        abdie "Absolute symlinks detected, aborting"
-    fi
-
-    abinfo "Symlinking gobject-introspection-1.0 ..."
-
-    ln -sfv /usr/share/gobject-introspection-1.0 \
-        -t "$BLDDIR/build-root/usr/share/"
-
-    gen_host_build_flags
-}
-
-gen_host_build_flags() {
-    abinfo "Determining build gcc internal include dirs ..."
-
-    local gcc_inc_dirs=()
-    readarray -t gcc_inc_dirs < <(
-        LC_ALL=C gcc -S -x c /dev/null -o/dev/null -v 2>&1 >/dev/null | \
-            sed --quiet '/#include <...> search starts here:/,/End of search list./{/gcc/ {s/^ *//; p}}'
-    )
-    abinfo "detected: ${gcc_inc_dirs[*]}"
-
-    local gcc_inc_flags=()
-    for i in "${gcc_inc_dirs[@]}"; do
-        gcc_inc_flags+=("-isystem" "$i")
-    done
-    gcc_inc_flags+=( \
-        -isystem "$BLDDIR/build-root/usr/include/loongarch64-linux-gnu" \
-        -isystem "$BLDDIR/build-root/usr/include" \
-        -isystem "$BLDDIR/toolchainroot/$LOLPREFIX/$OWTARGET/include" \
-    )
-
-    local core_ld_flags=(\
-        "-L$BLDDIR/build-root/usr/lib/gcc/loongarch64-linux-gnu/8" \
-        "-L$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu" \
-        "-Wl,--rpath-link" "-Wl,$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu" \
-        "-Wl,--sysroot=$BLDDIR/build-root" \
-        "-Wl,--dynamic-linker=/lib64/ld.so.1" \
-        "-nostdinc" \
-        "-specs=$BLDDIR/build/gcc.spec" \
-    )
-
-    abinfo "Generating gcc spec file ..."
-
-    gcc -dumpspecs | \
-        sed '/^\*link_libgcc:/,+1{s/%D//;}' \
-            > "$BLDDIR/build/gcc.spec"
-
-    abinfo "Generating meson cross file ..."
-
-    cat > "$BLDDIR/build/cross-file.txt" << EOF
-[binaries]
-c = '$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-gcc'
-cpp = '$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-g++'
-ar = '$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-ar'
-strip = '$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-strip'
-
-[host_machine]
-system = 'linux'
-cpu_family = 'loongarch64'
-cpu = 'loongarch64'
-endian = 'little'
-EOF
-
-    abinfo "Generating host tools wrapper script ..."
-
-    mkdir -p "$BLDDIR/toolchainroot/$LOLPREFIX/bin/"
-    cat > "$BLDDIR/toolchainroot/$LOLPREFIX/bin/host-tools" << EOF
-#!/bin/bash
-tool="\${0##*-}"
-case "\$tool" in
-    gcc | g++)
-        exec "\$tool" -nostdinc ${gcc_inc_flags[*]} ${core_ld_flags[*]} "\$@"
-        ;;
-    *)
-        exec "\$tool" "\$@"
-        ;;
-esac
-EOF
-    chmod +x "$BLDDIR/toolchainroot/$LOLPREFIX/bin/host-tools"
-    for i in gcc g++ ar strip; do
-        ln -svf host-tools "$BLDDIR/toolchainroot/$LOLPREFIX/bin/$OWTARGET-$i"
-    done
-
-    local cc_ld_flags=( \
-        "${core_ld_flags[@]}" \
-        "-ffile-prefix-map=$BLDDIR=." \
-        "-Wl,-O1,--sort-common,--as-needed" "-Wl,-build-id=sha1" \
-        "-g" \
-    )
-
-    HOST_BUILD_ENVS=(
-        "PATH=$PATH:$BLDDIR/toolchainroot/$LOLPREFIX/bin"
-        "CFLAGS=\
-            -pipe -O2 \
-            ${gcc_inc_flags[*]} \
-            ${cc_ld_flags[*]} \
-        "
-        "PKG_CONFIG_PATH=$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
-        "PKG_CONFIG_SYSROOT_DIR=$BLDDIR/build-root"
-        "LDFLAGS=\
-            ${cc_ld_flags[*]} \
-        "
-        "ASFLAGS=\
-            -pipe -O2 -g \
-            -ffile-prefix-map=$BLDDIR=. \
-        "
-        "PKG_CONFIG=pkg-config"
-        "LT_SYS_LIBRARY_PATH=$LOLPREFIX/lib/$OWTARGET:$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu"
-        "TERM=$TERM"
-        "CC=gcc"
-        "CCLD=gcc"
-    )
-}
-
-install_host_shlib() {
-    local libname="$1"
-    abinfo "Installing host lib "$libname" ..."
-    [ -e "$libname" ] || abdie "no product built"
-
-    local lib="$(readlink -f "$libname")"
-    install -Dvm644 "$lib" \
-        -t "$PKGDIR$LOLPREFIX/lib/$OWTARGET/"
-    ln -svf "$(basename -- "$lib")" \
-        "$PKGDIR$LOLPREFIX/lib/$OWTARGET/$(basename -- "$libname")"
-}
-
-host_gdk_pixbuf() {
-    mkdir -p "$BLDDIR/build/host-gdk-pixbuf"
-
-    abinfo "Unpacking gdk-pixbuf ..."
-    dpkg-source -x "$SRCDIR/gdk-pixbuf_"*.dsc "$BLDDIR/src/gdk-pixbuf"
-
-    pushd "$BLDDIR/build/host-gdk-pixbuf"
-
-    abinfo "Configuring host gdk-pixbuf ..."
-    env -i "${HOST_BUILD_ENVS[@]}" \
-        meson setup "$BLDDIR/src/gdk-pixbuf" \
-            --wrap-mode=nodownload \
-            --buildtype=plain \
-            --prefix="$LOLPREFIX" \
-            --sysconfdir=/etc \
-            --localstatedir=/var \
-            --libdir="lib/$OWTARGET" \
-            --cross-file "$BLDDIR/build/cross-file.txt" \
-            -Dpython.bytecompile=-1 \
-            -Dman=false \
-            -Dauto_features=enabled \
-            -Dinstalled_tests=false \
-            -Dgir=false
-
-    abinfo "Building host gdk-pixbuf ..."
-    env -i "${HOST_BUILD_ENVS[@]}" \
-        meson compile -v \
-            gdk-pixbuf/gdk_pixbuf-2.0:shared_library \
-            gdk-pixbuf/gdk-pixbuf-query-loaders:executable
-
-    abinfo "Installing host gdk-pixbuf ..."
-    install_host_shlib "gdk-pixbuf/libgdk_pixbuf-2.0.so.0"
-
-    install -Dvm755 "gdk-pixbuf/gdk-pixbuf-query-loaders" \
-        -t "$PKGDIR$LOLPREFIX/lib/$OWTARGET/gdk-pixbuf-2.0/"
-
-    popd
-}
-
-host_gtk2() {
-    mkdir -p "$BLDDIR/build/host-gtk2"
-
-    abinfo "Unpacking gtk2 ..."
-    dpkg-source -x "$SRCDIR/gtk+2.0_"*.dsc "$BLDDIR/src/gtk2"
-
-    abinfo "Regenerating Autotools scripts ..."
-    autoreconf -fvs --install "$BLDDIR/src/gtk2"
-
-    apply_source_patch_series \
-        "$SRCDIR/autobuild/patches/gtk2" \
-        "$BLDDIR/src/gtk2" \
-        "gtk2"
-
-    pushd "$BLDDIR/build/host-gtk2"
-
-    abinfo "Configuring host gtk2 ..."
-    env -i "${HOST_BUILD_ENVS[@]}" \
-        "$BLDDIR/src/gtk2/configure" \
-            --host="$OWTARGET" \
-            --prefix="$LOLPREFIX" \
-            --libdir="$LOLPREFIX/lib/$OWTARGET" \
-            --sysconfdir=/etc \
-            --enable-test-print-backend \
-            --with-xinput=yes \
-            --enable-shared \
-            --enable-introspection \
-            --disable-static \
-            --disable-man
-
-    abinfo "Building host gtk2 ..."
-
-    # Fill in a dummy libgdk-x11-2.0.la to make the build happy
-    #   since we do not need to rebuild libgdk-3
-    cat > gdk/libgdk-x11-2.0.la << EOF
-# Generated by libtool
-old_library=''
-dlname='libgdk-x11-2.0.so.0'
-library_names='libgdk-x11-2.0.so.0'
-libdir='$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu'
-EOF
-
-    env -i "${HOST_BUILD_ENVS[@]}" "MAKEFLAGS=$MAKEFLAGS" \
-        make -C gtk libgtk-x11-2.0.la
-
-    abinfo "Installing host gtk2 ..."
-    install_host_shlib "gtk/.libs/libgtk-x11-2.0.so.0"
-
-    popd
-}
-
-host_gtk3() {
-    mkdir -p "$BLDDIR/build/host-gtk3"
-
-    abinfo "Unpacking gtk3 ..."
-    dpkg-source -x "$SRCDIR/gtk+3.0_"*.dsc "$BLDDIR/src/gtk3"
-
-    abinfo "Regenerating Autotools scripts ..."
-    autoreconf -fvs --install "$BLDDIR/src/gtk3"
-
-    pushd "$BLDDIR/build/host-gtk3"
-
-    abinfo "Configuring host gtk3 ..."
-    env -i "${HOST_BUILD_ENVS[@]}" \
-        "$BLDDIR/src/gtk3/configure" \
-            --host="$OWTARGET" \
-            --prefix="$LOLPREFIX" \
-            --libdir="$LOLPREFIX/lib/$OWTARGET" \
-            --libexecdir="$LOLPREFIX/libexec" \
-            --sysconfdir=/etc \
-            --enable-test-print-backend \
-            --enable-broadway-backend \
-            --enable-x11-backend \
-            --enable-wayland-backend \
-            --enable-shared \
-            --enable-introspection \
-            --enable-cloudprint \
-            --disable-static \
-            --disable-man \
-            CUPS_CONFIG="$BLDDIR/build-root/usr/bin/cups-config"
-
-    abinfo "Building host gtk3 ..."
-    # Fill in a dummy libgdk-3.la to make the build happy
-    #   since we do not need to rebuild libgdk-3
-    cat > gdk/libgdk-3.la << EOF
-# Generated by libtool
-old_library=''
-dlname='libgdk-3.so.0'
-library_names='libgdk-3.so.0'
-libdir='$BLDDIR/build-root/usr/lib/loongarch64-linux-gnu'
-EOF
-    env -i "${HOST_BUILD_ENVS[@]}" "MAKEFLAGS=$MAKEFLAGS" \
-        bash -c '
-            set -e -o pipefail
-            make -C gtk gtkdbusgenerated.h V=1
-            make -C gtk libgtk-3.la V=1
-        '
-
-    abinfo "Installing host gtk3 ..."
-    install_host_shlib "gtk/.libs/libgtk-3.so.0"
-
-    popd
-}
-
-host_glib2() {
-    mkdir -p "$BLDDIR/build/host-glib2"
-
-    abinfo "Unpacking glib2 ..."
-    dpkg-source -x "$SRCDIR/glib2.0"*.dsc "$BLDDIR/src/glib2"
-
-    apply_source_patch_series \
-        "$SRCDIR/autobuild/patches/glib2" \
-        "$BLDDIR/src/glib2" \
-        "glib2"
-
-    pushd "$BLDDIR/build/host-glib2"
-
-    abinfo "Configuring host glib2 ..."
-    env -i "${HOST_BUILD_ENVS[@]}" \
-        meson setup "$BLDDIR/src/glib2" \
-            --wrap-mode=nodownload \
-            --buildtype=plain \
-            --prefix="$LOLPREFIX" \
-            --sysconfdir=/etc \
-            --localstatedir=/var \
-            --libdir="lib/$OWTARGET" \
-            --libexecdir=lib/glib2.0 \
-            -Dinternal_pcre=false \
-            --default-library shared \
-            -Dgtk_doc=false \
-            -Dinstalled_tests=false \
-            -Dman=false \
-            -Dfam=false \
-            -Dlibmount=true \
-            -Dselinux=true \
-            -Dsystemtap=true \
-            -Dxattr=true \
-            --cross-file "$BLDDIR/build/cross-file.txt"
-
-    abinfo "Building host glib2 ..."
-    env -i "${HOST_BUILD_ENVS[@]}" \
-        meson compile -v \
-            gio/gio-2.0:shared_library
-
-    abinfo "Installing host glib2 ..."
-    install_host_shlib "gio/libgio-2.0.so.0"
-
-    popd
-}
-
-host_libcanberra() {
-    mkdir -p "$BLDDIR/build/host-libcanberra"
-
-    abinfo "Unpacking libcanberra ..."
-    dpkg-source -x "$SRCDIR/libcanberra_"*.dsc "$BLDDIR/src/libcanberra"
-
-    abinfo "Regenerating Autotools scripts ..."
-    autoreconf -fvs --install "$BLDDIR/src/libcanberra"
-
-    pushd "$BLDDIR/build/host-libcanberra"
-
-    abinfo "Configuring host libcanberra ..."
-    env -i "${HOST_BUILD_ENVS[@]}" \
-        "$BLDDIR/src/libcanberra/configure" \
-            --host="$OWTARGET" \
-            --prefix="$LOLPREFIX" \
-            --libdir="$LOLPREFIX/lib/$OWTARGET" \
-            --libexecdir="$LOLPREFIX/libexec" \
-            --localstatedir=/var \
-            --datarootdir=/usr/share \
-            --sysconfdir=/etc \
-            --enable-pulse \
-            --enable-gtk \
-            --with-builtin=dso \
-            --enable-tdb \
-            --enable-alsa \
-            --disable-oss
-
-    abinfo "Building host libcanberra ..."
-    env -i "${HOST_BUILD_ENVS[@]}" "MAKEFLAGS=$MAKEFLAGS" \
-        make -C src libcanberra.la V=1
-
-    abinfo "Installing host libcanberra ..."
-    install_host_shlib "src/.libs/libcanberra.so.0"
-
     popd
 }
 
 install_hooks() {
-    for i in postinst postrm; do
+    for i in postinst; do
         sed 's#@prefix@#'"$LOLPREFIX"'#g; s#@target@#'"$OWTARGET"'#g' \
             "$SRCDIR/autobuild/additional-files/hooks/$i.in" \
             > "$SRCDIR/autobuild/$i"
@@ -724,41 +173,12 @@ if ! type abdie >/dev/null 2>&1; then
     return 0
 fi
 
-abinfo "Install Linux API headers ..."
-linux_libc_install
-
-abinfo "Building GNU Make 4.3 ..."
-make_build
+abinfo "Building patchelf..."
+patchelf_build
 
 abinfo "Building Glibc ..."
 glibc_source
 glibc_build
-
-set_host_build_env
-
-abinfo "Building host gdk-pixbuf"
-host_gdk_pixbuf
-
-abinfo "Building host gtk2"
-host_gtk2
-
-abinfo "Building host gtk3"
-host_gtk3
-
-abinfo "Building host glib2"
-host_glib2
-
-abinfo "Building host libcanberra"
-host_libcanberra
-
-abinfo "Install additional runtime libraries ..."
-install_additional_libs
-
-abinfo "Installing debug symbols ..."
-install_dbgsyms
-
-abinfo "Installing documentation ..."
-install_copyright_docs
 
 abinfo "Installing package hooks ..."
 install_hooks
