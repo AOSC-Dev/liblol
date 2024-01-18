@@ -27,7 +27,7 @@ Components
 libLoL consists of two components, one in the kernel-space and the other in
 the user-space.
 
-- Kernel: The [la_ow_syscall](https://github.com/shankerwangmiao/la_ow_syscall)
+- Kernel: The [la_ow_syscall](https://github.com/AOSC-Dev/la_ow_syscall)
   modules provides support for old-world system call support in the Linux
   Kernel, making it possible to run old-world applications on new-world
   (upstream) kernels.

@@ -14,7 +14,7 @@ libLoL (LoongArch on LoongArch) 是一款用于提供旧世界 ABI 兼容性的�
 
 libLoL 由内核空间和用户空间两个组件组成：
 
-- 内核部分：通过 [la_ow_syscall](https://github.com/shankerwangmiao/la_ow_syscall) 模块，给 Linux 内核新增旧世界系统调用支持，进而使得新世界内核得以兼容旧世界运行时和应用程序
+- 内核部分：通过 [la_ow_syscall](https://github.com/AOSC-Dev/la_ow_syscall) 模块，给 Linux 内核新增旧世界系统调用支持，进而使得新世界内核得以兼容旧世界运行时和应用程序
 - 用户空间部分：给 [Glibc 打补丁](https://github.com/AOSC-Dev/glibc-loongarch-oldworld)以提供旧世界应用程序所需符号的兼容性。其余运行时库由发行版软件包或 [Loongnix](https://www.loongson.cn/system/loongnix) 的二进制软件包提供。
 
 报告问题
