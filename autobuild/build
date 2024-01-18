@@ -121,10 +121,21 @@ EOF
             "$i"
     done
 
+    abinfo "Generating a dummy ld-linux-loongarch-lp64d.so.1 ..."
+
+    gcc -shared \
+        -x c /dev/null \
+        -o ld-linux-loongarch-lp64d.so.1 \
+        -Wl,--version-script -Wl,ld.map \
+        -nostdlib
+
     abinfo "Installing ..."
 
     mkdir -pv "$PKGDIR$LOLPREFIX/lib/$OWTARGET/"
-    for i in "libc.so.6" "nptl/libpthread.so.0" "${libs[@]}"; do
+    for i in "libc.so.6" "nptl/libpthread.so.0" \
+             "ld-linux-loongarch-lp64d.so.1" \
+             "${libs[@]}"; \
+        do
         install -Dvm644 "$i" \
             -t "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/"
     done
