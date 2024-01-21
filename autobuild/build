@@ -61,8 +61,8 @@ rootsbindir = \${exec_prefix}/sbin
 complocaledir = /usr/lib/locale
 localtime-file = /etc/localtime
 sysconfdir = $LOLPREFIX/etc
-user-defined-trusted-dirs-pre = $LOLPREFIX/support/lib/$OWTARGET
-user-defined-trusted-dirs = $LOLPREFIX/lib/$OWTARGET $LOLPREFIX/lib
+user-defined-trusted-dirs-pre = $LOLPREFIX/local/preload-lib $LOLPREFIX/support/lib/$OWTARGET
+user-defined-trusted-dirs = $LOLPREFIX/local/lib $LOLPREFIX/lib/$OWTARGET $LOLPREFIX/lib
 
 CFLAGS = -pipe $cflags_common
 ASFLAGS = -pipe $cflags_common
@@ -194,6 +194,12 @@ patchelf_build
 abinfo "Building Glibc ..."
 glibc_source
 glibc_build
+
+abinfo "Making symlinks for system provided libs ..."
+system_libs_prio=("/usr/lib/libstdc++.so.6")
+for i in "${system_libs_prio[@]}"; do
+    ln -sfv "$i" "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/"
+done
 
 abinfo "Installing package hooks ..."
 install_hooks
