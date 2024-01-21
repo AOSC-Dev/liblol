@@ -45,6 +45,8 @@ glibc_build() {
 
     pushd "$BLDDIR/build/glibc"
     local GLIBC_VER="2.38"
+    local cflags_common="-O2 -g -ffile-prefix-map=$BLDDIR=."
+    local ldflags_common="-Wl,-O1,--sort-common,--as-needed -Wl,-build-id=sha1"
 
     cat > configparms <<EOF
 install_root = \$(DESTDIR)
@@ -62,10 +64,10 @@ sysconfdir = $LOLPREFIX/etc
 user-defined-trusted-dirs-pre = $LOLPREFIX/support/lib/$OWTARGET
 user-defined-trusted-dirs = $LOLPREFIX/lib/$OWTARGET $LOLPREFIX/lib
 
-CFLAGS = -pipe -O2 -g -ffile-prefix-map=$BLDDIR=.
-ASFLAGS = -pipe -O2 -g -ffile-prefix-map=$BLDDIR=.
-BUILD_CFLAGS = -O2 -g -ffile-prefix-map=$BLDDIR=.
-LDFLAGS = -Wl,-O1,--sort-common,--as-needed -Wl,-build-id=sha1
+CFLAGS = -pipe $cflags_common
+ASFLAGS = -pipe $cflags_common
+BUILD_CFLAGS = $cflags_common
+LDFLAGS = $ldflags_common
 EOF
 
     env -i "TERM=$TERM" "PATH=$PATH" \
@@ -127,7 +129,9 @@ EOF
         -x c /dev/null \
         -o ld-linux-loongarch-lp64d.so.1 \
         -Wl,--version-script -Wl,ld.map \
-        -nostdlib
+        -nostdlib \
+        $cflags_common \
+        $ldflags_common
 
     abinfo "Installing ..."
 
