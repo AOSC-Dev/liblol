@@ -1,4 +1,4 @@
-VER=0.1.3
+VER=0.1.4~pre1
 _mirror="http://pkg.loongnix.cn/loongnix"
 
 ### For pkgs from outside loongnix repo
