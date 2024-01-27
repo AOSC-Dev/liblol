@@ -88,6 +88,9 @@ EOF
         "locale/libBrokenLocale.so.1" \
         "rt/librt.so.1" \
         "crypt/libcrypt.so.1" \
+        "resolv/libanl.so.1" \
+        "login/libutil.so.1" \
+        "nis/libnsl.so.1" \
     )
     local dir
     local lib
