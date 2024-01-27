@@ -1,6 +1,4 @@
 #!/bin/bash
-abinfo "Loading Autobuild elf handler functions ..."
-abrequire elf
 
 abinfo "Setting up build environment ..."
 OWTARGET="loongarch64-aosc-linux-gnuow"
