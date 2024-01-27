@@ -1,4 +1,4 @@
-From ab1f75bb30336948c3de6a8355994314b3fdc4a3 Mon Sep 17 00:00:00 2001
+From 033767c6d267222851a27169e052583b1a40d9e3 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 13:28:41 +0800
 Subject: [PATCH 09/10] prepend trusted-dirs
