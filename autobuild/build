@@ -1,7 +1,3 @@
-#!/bin/bash
-abinfo "Loading Autobuild elf handler functions ..."
-abrequire elf
-
 abinfo "Setting up build environment ..."
 OWTARGET="loongarch64-aosc-linux-gnuow"
 LOLPREFIX="/opt/lol"
@@ -81,6 +77,7 @@ EOF
 
     env -i "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" "PATH=$PATH" \
         make "$PWD/libc.so.6"
+
     local libs=( \
         "elf/ld.so.1" \
         "math/libm.so.6" \
@@ -94,6 +91,7 @@ EOF
     )
     local dir
     local lib
+
     for i in "nptl/libpthread.so.0" "${libs[@]}"; do
         dir=$(dirname -- "$i")
         lib=$(basename -- "$i")
@@ -105,7 +103,7 @@ EOF
                 objdir="$PWD"
     done
 
-    abinfo "Patchelfing ..."
+    abinfo "Patching Glibc libraries ..."
 
     for i in "nptl/libpthread.so.0" "libc.so.6"; do
         "$BLDDIR/build/patchelf/src/patchelf" \
@@ -124,7 +122,6 @@ EOF
     done
 
     abinfo "Generating a dummy ld-linux-loongarch-lp64d.so.1 ..."
-
     gcc -shared \
         -x c /dev/null \
         -o ld-linux-loongarch-lp64d.so.1 \
@@ -133,17 +130,17 @@ EOF
         $cflags_common \
         $ldflags_common
 
-    abinfo "Installing ..."
-
+    abinfo "Installing libLoL runtime ..."
     mkdir -pv "$PKGDIR$LOLPREFIX/lib/$OWTARGET/"
+
     for i in "libc.so.6" "nptl/libpthread.so.0" \
              "ld-linux-loongarch-lp64d.so.1" \
-             "${libs[@]}"; \
-        do
+             "${libs[@]}"; do
         install -Dvm644 "$i" \
             -t "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/"
     done
-    chmod +x "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/ld.so.1"
+
+    chmod -v +x "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/ld.so.1"
 
     mkdir -pv "$PKGDIR/usr/lib" #/lib64 is /usr/lib on AOSC
     ln -sfvr "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/ld.so.1" \
@@ -166,10 +163,8 @@ patchelf_build() {
         "patchelf"
 
     abinfo "Building patchelf ..."
-
     mkdir -pv "$BLDDIR/build/patchelf"
     pushd "$BLDDIR/build/patchelf"
-
     "$BLDDIR/src/patchelf/configure"
     make
     popd
@@ -183,10 +178,6 @@ install_hooks() {
         chmod +x "$SRCDIR/autobuild/$i"
     done
 }
-
-if ! type abdie >/dev/null 2>&1; then
-    return 0
-fi
 
 abinfo "Building patchelf..."
 patchelf_build
