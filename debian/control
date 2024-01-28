@@ -1,0 +1,28 @@
+Source: liblol
+Section: otherosfs
+Priority: optional
+Maintainer: Miao Wang <shankerwangmiao@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               libstdc++6,
+               libltdl-dev,
+               quilt,
+               bison,
+               gawk,
+               python3,
+Standards-Version: 4.6.2
+Homepage: https://github.com/AOSC-Dev/liblol
+
+Package: liblol
+Architecture: loong64
+Multi-Arch: foreign
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         libstdc++6,
+         libc6 (>= 2.36),
+         libc6 (<< ${glibcVer}.1~),
+Breaks: libcrypt1 (>= 1:${libxcryptVer}.1~)
+Conflicts: glibc,
+Recommends: liblol-dkms,
+Description: Compatibility layer for old world applications
+  This package contains a Compatibility layer for old world
+  applications on new world loongarch64 platform.
