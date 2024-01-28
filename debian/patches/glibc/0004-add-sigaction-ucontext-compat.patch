@@ -1,7 +1,7 @@
-From 3616b6b4e4c2b0cf9b0d22560ddc679927ed4f80 Mon Sep 17 00:00:00 2001
+From ba63c4ec421a0f960fccc41a6287b3d858995951 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 05:15:07 +0800
-Subject: [PATCH 05/12] add sigaction & ucontext compat
+Subject: [PATCH 04/12] add sigaction & ucontext compat
 
 ---
  sysdeps/unix/sysv/linux/loongarch/Makefile    |   8 +-

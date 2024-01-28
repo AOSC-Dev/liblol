@@ -1,7 +1,7 @@
-From 3ffdb2ede4e757c237ba94815ade75bd3e22ebf4 Mon Sep 17 00:00:00 2001
+From f725d668f83c51db02e57a6b97dd7ed4600930d8 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 13:28:41 +0800
-Subject: [PATCH 10/12] prepend trusted-dirs
+Subject: [PATCH 09/12] prepend trusted-dirs
 
 and search prepended trusted-dirs before other pathes
 ---
