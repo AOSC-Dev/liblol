@@ -1,0 +1,53 @@
+From 281e43394ba0bbd9c9a80571ef28fed9136bbb62 Mon Sep 17 00:00:00 2001
+From: Mingcong Bai <jeffbai@aosc.io>
+Date: Sun, 23 Nov 2025 11:39:31 +0800
+Subject: [PATCH 12/12] local: ld multiarch
+
+---
+ Makeconfig   | 9 +++++++++
+ elf/Makefile | 2 +-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/Makeconfig b/Makeconfig
+index 7102d922b2..6820699113 100644
+--- a/Makeconfig
++++ b/Makeconfig
+@@ -153,6 +153,11 @@ libdir = $(exec_prefix)/lib
+ endif
+ inst_libdir = $(install_root)$(libdir)
+ 
++# Compat places to look for libraries
++ifndef extra_libdir
++extra_libdir = /lib:$(exec_prefix)/lib
++endif
++
+ # Where to install the shared library.
+ ifndef slibdir
+ slibdir = $(exec_prefix)/lib
+@@ -660,6 +665,10 @@ else
+ default-rpath = $(libdir)
+ endif
+ 
++ifdef extra_libdir
++default-rpath += :$(extra_libdir)
++endif
++
+ ifndef link-extra-libs
+ link-extra-libs = $(LDLIBS-$(@F))
+ link-extra-libs-static = $(link-extra-libs)
+diff --git a/elf/Makefile b/elf/Makefile
+index 90c7062251..4ea2829061 100644
+--- a/elf/Makefile
++++ b/elf/Makefile
+@@ -1565,7 +1565,7 @@ $(objpfx)trusted-dirs.st: Makefile $(..)Makeconfig
+ 	$(make-target-directory)
+ 	echo "$(subst :, ,$(user-defined-trusted-dirs-pre) $(default-rpath) $(user-defined-trusted-dirs))"    \
+ 	| $(AWK) -f gen-trusted-dirs.awk > ${@:st=T};
+-	echo '#define DL_DST_LIB "$(notdir $(slibdir))"' >> ${@:st=T}
++	echo '#define DL_DST_LIB "$(shell echo $(slibdir) | sed 's,/,,')"' >> ${@:st=T}
+ 	echo '#define SYSTEM_DIRS_PRE_COUNT $(words $(subst :, ,$(user-defined-trusted-dirs-pre)))' >> ${@:st=T}
+ 	$(move-if-change) ${@:st=T} ${@:st=h}
+ 	touch $@
+-- 
+2.52.0
+

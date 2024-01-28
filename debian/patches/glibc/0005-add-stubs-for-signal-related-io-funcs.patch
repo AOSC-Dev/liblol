@@ -1,7 +1,7 @@
-From 210dda140e033a33dd199e2c0f629379a4f4755f Mon Sep 17 00:00:00 2001
+From a54d1b6ed4a1e405da1486137269ee3ebc3e4214 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sat, 13 Jan 2024 07:38:04 +0800
-Subject: [PATCH 06/12] add stubs for signal related io funcs
+Subject: [PATCH 05/11] add stubs for signal related io funcs
 
 ---
  sysdeps/unix/sysv/linux/loongarch/epoll_pwait.c          | 1 +
@@ -79,5 +79,5 @@ index 0000000000..192980c66c
 @@ -0,0 +1 @@
 +#include<posix/spawnattr_getsigmask.c>
 -- 
-2.55.0
+2.56.0
 

@@ -1,7 +1,7 @@
-From e337ec21e80a8512db85672433fcd027cbe5adfd Mon Sep 17 00:00:00 2001
+From 35e554aaaf8dba1498310a2a4ef9db6044e64849 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sat, 13 Jan 2024 03:23:48 +0800
-Subject: [PATCH 02/12] add old world abi compatibility
+Subject: [PATCH 01/11] add old world abi compatibility
 
 ---
  login/Makefile                                |   8 +-
@@ -449,5 +449,5 @@ index 0000000000..3b57a461d1
 +
 +#include <sysdeps/unix/sysv/linux/statx_cp.c>
 -- 
-2.55.0
+2.56.0
 

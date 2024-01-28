@@ -1,7 +1,7 @@
-From 5d319c45b13abfb3419e754d9c2301c33f6a0789 Mon Sep 17 00:00:00 2001
+From f732b3de489ecffc5a715f81f7cab69421287559 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 08:41:15 +0800
-Subject: [PATCH 08/12] add more pthread symbols
+Subject: [PATCH 07/11] add more pthread symbols
 
 ---
  nptl/old_pthread_cond_destroy.c            |  4 ++--
@@ -463,5 +463,5 @@ index 26d4a4f227..2f2c08bc2b 100644
  
  ifeq (,$(filter $(default-abi),$(abi-variants)))
 -- 
-2.55.0
+2.56.0
 
