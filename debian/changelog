@@ -1,0 +1,79 @@
+liblol (0.1.9-1) unstable; urgency=medium
+
+  * Bump glibc version to 2.41.
+  * Attempt to fix page size misalignment with Binutils >= 2.44.
+
+ -- Mingcong Bai <jeffbai@aosc.io>  Mon, 03 Mar 2025 13:38:42 +0800
+
+liblol (0.1.8-1) unstable; urgency=medium
+
+  * Release 0.1.8-1.
+  * Bump libxcrypt version to 4.4.38.
+
+ -- Mingcong Bai <jeffbai@aosc.io>  Thu, 23 Jan 2025 13:22:41 +0800
+
+liblol (0.1.7-1) unstable; urgency=medium
+
+  * Relase 0.1.7-1.
+  * Bump libxcrypt version to 4.4.37.
+
+ -- Mingcong Bai <jeffbai@aosc.io>  Thu, 23 Jan 2025 12:56:05 +0800
+
+liblol (0.1.6-1) unstable; urgency=medium
+
+  * Release 0.1.6-1
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Mon, 16 Sep 2024 22:18:00 +0800
+
+liblol (0.1.6~pre2-1) unstable; urgency=medium
+
+  * Release 0.1.6~pre2-1
+  * fix implementation of lxstat64
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Sat, 31 Aug 2024 23:36:00 +0800
+
+liblol (0.1.5-1) unstable; urgency=medium
+
+  * Release 0.1.5-1
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Tue, 30 Apr 2024 22:55:00 +0800
+
+liblol (0.1.5~pre6-1) unstable; urgency=medium
+
+  * add ABI checking
+  * not promoting symbol versions of libnsl.so
+  * use libxcrypt for libcrypto.so.1
+  * fix wrong version mapping for libpthread symbols
+  * upgrade glibc to 2.39
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Mon, 18 Mar 2024 10:43:00 +0800
+
+liblol (0.1.4-1) unstable; urgency=medium
+
+  * Release 0.1.4-1
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Fri, 01 Mar 2024 23:31:00 +0800
+
+liblol (0.1.4~pre4-1) unstable; urgency=medium
+
+  * glibc: also add syscall fallback for fstatat
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Tue, 20 Feb 2024 15:22:00 +0800
+
+liblol (0.1.4~pre3-1) unstable; urgency=medium
+
+  * make libc.so.6 executable
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Thu, 08 Feb 2024 16:09:00 +0800
+
+liblol (0.1.4~pre2-1) unstable; urgency=medium
+
+  * new upstream version
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Sun, 28 Jan 2024 08:07:00 +0800
+
+liblol (0.1.3-1) unstable; urgency=medium
+
+  * Initial upload
+
+ -- Miao Wang <shankerwangmiao@gmail.com>  Sat, 27 Jan 2024 18:09:00 +0800
