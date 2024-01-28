@@ -1,7 +1,7 @@
-From ec8d7d9e099adc2bb22079da31e6d56797faa399 Mon Sep 17 00:00:00 2001
+From 1aa517a64dfa218246288fc9543268a437d036f3 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 16:51:44 +0800
-Subject: [PATCH 09/12] remove clone3 for compatibility with qq
+Subject: [PATCH 08/12] remove clone3 for compatibility with qq
 
 ---
  sysdeps/unix/sysv/linux/loongarch/clone-internal.c | 8 ++++++++

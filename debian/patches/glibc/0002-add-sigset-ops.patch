@@ -1,7 +1,7 @@
-From a686be3451f63b2f808573e4efa00f22fef28778 Mon Sep 17 00:00:00 2001
+From 9844cd515002e90440017f516c338f78dfce4d1c Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sat, 13 Jan 2024 05:07:19 +0800
-Subject: [PATCH 03/12] add sigset ops
+Subject: [PATCH 02/12] add sigset ops
 
 ---
  sysdeps/unix/sysv/linux/loongarch/Makefile          | 13 +++++++++++++

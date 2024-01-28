@@ -1,7 +1,7 @@
-From 8c137f8fdef79f87a81b7a95405219e2a04657b4 Mon Sep 17 00:00:00 2001
+From 9058071211bb9a4bfd117dd63071022777344f34 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sat, 13 Jan 2024 06:35:35 +0800
-Subject: [PATCH 04/12] add signal functions
+Subject: [PATCH 03/12] add signal functions
 
 ---
  sysdeps/loongarch/nptl/pthread_sigmask.c      | 73 +++++++++++++++++++

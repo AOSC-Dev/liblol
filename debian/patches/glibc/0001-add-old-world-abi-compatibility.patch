@@ -1,7 +1,7 @@
-From 71a9c15c708f8c8bc58a9359c6e2d9704ebfd116 Mon Sep 17 00:00:00 2001
+From 8db1d1376dbea94d6bae78f315d29d06b80eada9 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sat, 13 Jan 2024 03:23:48 +0800
-Subject: [PATCH 02/12] add old world abi compatibility
+Subject: [PATCH 01/12] add old world abi compatibility
 
 ---
  login/Makefile                                |   8 +-
