@@ -10,3 +10,5 @@
 0010-Add-___brk_addr-symbol.patch
 0011-LoongArch-Correct-__ieee754-_-_scalb-__ieee754-_-_sc.patch
 0012-siglist-errlist-add-compact-statements.patch
+local-remove-manual.diff
+local-ld-multiarch.diff
