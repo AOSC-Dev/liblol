@@ -1,0 +1,251 @@
+#! /usr/bin/make -f
+
+
+include /usr/share/dpkg/pkg-info.mk
+
+glibc-ver := 2.38
+patchelf-ver := 0.18.0
+
+SUBSTVARS += -VglibcVer="$(glibc-ver)"
+
+glibc-orig = ../liblol_$(DEB_VERSION_UPSTREAM).orig-glibc.tar.xz
+patchelf-orig = ../liblol_$(DEB_VERSION_UPSTREAM).orig-patchelf.tar.gz
+
+DEB_BUILD_GNU_TYPE := $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+DEB_HOST_GNU_TYPE := $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_HOST_MULTIARCH := $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+lol_target_gnu_type := loongarch64-debian-linux-gnuow
+
+build_cflags := -pipe $(shell dpkg-buildflags --get CFLAGS_FOR_BUILD) $(shell dpkg-buildflags --get CPPFLAGS_FOR_BUILD)
+build_cxxflags := -pipe $(shell dpkg-buildflags --get CXXFLAGS_FOR_BUILD) $(shell dpkg-buildflags --get CPPFLAGS_FOR_BUILD)
+build_ldflags := $(shell dpkg-buildflags --get LDFLAGS_FOR_BUILD)
+host_cflags := -pipe $(shell dpkg-buildflags --get CFLAGS) $(shell dpkg-buildflags --get CPPFLAGS)
+host_ldflags := $(shell dpkg-buildflags --get LDFLAGS)
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+NJOBS := -j $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+endif
+
+BASE_CC = gcc
+DEB_GCC_VERSION = -13
+
+CC = $(DEB_HOST_GNU_TYPE)-$(BASE_CC)$(DEB_GCC_VERSION)
+BUILD_CC = $(DEB_BUILD_GNU_TYPE)-$(BASE_CC)
+
+prefix=/usr
+bindir=$(prefix)/bin
+datadir=$(prefix)/share
+complocaledir=$(prefix)/lib/locale
+sysconfdir=/etc
+libexecdir=$(prefix)/lib
+rootsbindir=/sbin
+includedir=$(prefix)/include
+docdir=$(prefix)/share/doc
+mandir=$(prefix)/share/man
+sbindir=$(prefix)/sbin
+vardbdir=/var/lib/misc
+rtlddir=/lib64
+slibdir=/lib/$(DEB_HOST_MULTIARCH)
+libdir=/usr/lib/$(DEB_HOST_MULTIARCH)
+
+get-orig-source: $(glibc-orig) $(patchelf-orig)
+	:
+
+$(glibc-orig):
+	curl -sSfL -o $@ https://ftp.debian.org/debian/pool/main/g/glibc/glibc_$(glibc-ver).orig.tar.xz
+$(patchelf-orig):
+	curl -sSfL -o $@ https://ftp.debian.org/debian/pool/main/p/patchelf/patchelf_$(patchelf-ver).orig.tar.gz
+
+%:
+	dh $@ --without autoreconf
+
+override_dh_auto_configure: patch-src config-glibc config-patchelf
+override_dh_auto_build: build-glibc build-patchelf
+override_dh_auto_install: install-glibc symlink-hostlibs
+
+patchelf_build_dir := debian/build-dir/patchelf
+
+config-patchelf: patch-src.patchelf
+	dh_autoreconf -Dpatchelf
+	mkdir -p $(patchelf_build_dir)
+	cd $(patchelf_build_dir) && \
+	$(CURDIR)/patchelf/configure \
+	  --build=$(DEB_BUILD_GNU_TYPE) \
+	  --host=$(DEB_BUILD_GNU_TYPE) \
+	  CFLAGS='$(build_cflags)' \
+	  CXXFLAGS='$(build_cxxflags)' \
+	  LDFLAGS='$(build_ldflags)'
+
+glibc_build_dir := debian/build-dir/glibc
+config-glibc: patch-src.glibc
+	mkdir -p $(glibc_build_dir)
+	rm -rf $(glibc_build_dir)/configparms
+	echo "BUILD_CC = $(BUILD_CC)"             >> $(glibc_build_dir)/configparms
+	echo "CFLAGS = $(host_cflags)"            >> $(glibc_build_dir)/configparms 
+	echo "ASFLAGS = $(host_cflags)"           >> $(glibc_build_dir)/configparms 
+	echo "BUILD_CFLAGS = $(build_cflags)"     >> $(glibc_build_dir)/configparms
+	echo "LDFLAGS = "                         >> $(glibc_build_dir)/configparms
+	echo "BASH := /bin/bash"                  >> $(glibc_build_dir)/configparms
+	echo "KSH := /bin/bash"                   >> $(glibc_build_dir)/configparms
+	echo "SHELL := /bin/bash"                 >> $(glibc_build_dir)/configparms
+	echo "LIBGD = no"                         >> $(glibc_build_dir)/configparms
+	echo "bindir = $(bindir)"                 >> $(glibc_build_dir)/configparms
+	echo "datadir = $(datadir)"               >> $(glibc_build_dir)/configparms
+	echo "complocaledir = $(complocaledir)"   >> $(glibc_build_dir)/configparms
+	echo "sysconfdir = $(sysconfdir)/liblol"  >> $(glibc_build_dir)/configparms
+	echo "localtime-file = $(sysconfdir)/localtime" >> $(glibc_build_dir)/configparms
+	echo "libexecdir = $(libexecdir)"         >> $(glibc_build_dir)/configparms
+	echo "rootsbindir = $(rootsbindir)"       >> $(glibc_build_dir)/configparms
+	echo "includedir = $(includedir)"         >> $(glibc_build_dir)/configparms
+	echo "docdir = $(docdir)"                 >> $(glibc_build_dir)/configparms
+	echo "mandir = $(mandir)"                 >> $(glibc_build_dir)/configparms
+	echo "sbindir = $(sbindir)"               >> $(glibc_build_dir)/configparms
+	echo "vardbdir = $(vardbdir)"             >> $(glibc_build_dir)/configparms
+	echo "libdir = $(libdir)"                 >> $(glibc_build_dir)/configparms
+	echo "slibdir = $(slibdir)"               >> $(glibc_build_dir)/configparms
+	echo "rtlddir = $(rtlddir)"               >> $(glibc_build_dir)/configparms
+	echo "user-defined-trusted-dirs-pre = /usr/local/lib/$(lol_target_gnu_type)/preload:/usr/lib/$(lol_target_gnu_type)/preload" >> $(glibc_build_dir)/configparms
+	echo "user-defined-trusted-dirs = /usr/local/lib/$(lol_target_gnu_type):/usr/lib/$(lol_target_gnu_type)" >> $(glibc_build_dir)/configparms
+	cd $(glibc_build_dir) && \
+		CC=$(CC) \
+		AUTOCONF=false \
+		MAKEINFO=: \
+		$(CURDIR)/glibc/configure \
+		--host=$(lol_target_gnu_type) \
+		--build=$(DEB_BUILD_GNU_TYPE) \
+		--prefix=/usr \
+		--without-selinux \
+		--enable-crypt \
+		--enable-bind-now \
+		--enable-fortify-source \
+		--enable-stackguard-randomization \
+		--enable-stack-protector=strong \
+		--with-pkgversion="LibLoL $(DEB_VERSION)" \
+		--with-bugurl="https://github.com/AOSC-Dev/liblol/issues" \
+		--disable-nscd \
+		--disable-werror \
+		--enable-multi-arch \
+		--enable-obsolete-rpc
+
+glibc_libs = libc.so.6 \
+	     nptl/libpthread.so.0 \
+	     elf/ld.so.1 \
+	     math/libm.so.6 \
+	     resolv/libresolv.so.2 \
+	     malloc/libc_malloc_debug.so.0 \
+	     nptl_db/libthread_db.so.1 \
+	     dlfcn/libdl.so.2 \
+	     locale/libBrokenLocale.so.1 \
+	     rt/librt.so.1 \
+	     crypt/libcrypt.so.1 \
+	     resolv/libanl.so.1 \
+	     login/libutil.so.1 \
+	     nis/libnsl.so.1
+
+glibc_libs_targets = $(addprefix build-glibc-,$(subst /,-,$(glibc_libs)))
+glibc_libs_targets_after = $(addprefix build-glibc-,$(filter-out libc.so.6,$(subst /,-,$(glibc_libs))))
+
+glibc_libs_install_targets = $(addprefix install-glibc-,$(subst /,-,$(glibc_libs)))
+
+patchelf_bin := $(patchelf_build_dir)/src/patchelf
+
+$(patchelf_bin): build-patchelf
+	:
+
+build-glibc: $(glibc_libs_targets)
+	:
+
+$(glibc_libs_targets_after): build-glibc-libc.so.6
+
+build-glibc-libc.so.6:
+	$(MAKE) -C $(glibc_build_dir) "$(CURDIR)/$(glibc_build_dir)/libc.so.6" $(NJOBS)
+
+glibc_cur_lib = $(subst -,/,$(*))
+glibc_cur_lib_dir = $(subst /,,$(dir $(glibc_cur_lib)))
+glibc_cur_lib_name = $(notdir $(glibc_cur_lib))
+build-glibc-%:
+	$(MAKE) -C $(CURDIR)/glibc/$(glibc_cur_lib_dir) \
+		"$(CURDIR)/$(glibc_build_dir)/$(glibc_cur_lib)" \
+		subdir=$(glibc_cur_lib_dir) \
+		..=../ \
+		objdir="$(CURDIR)/$(glibc_build_dir)" \
+		$(NJOBS)
+
+TMPDIR ?= debian/tmp
+install_libs_dir := $(TMPDIR)/usr/lib/$(lol_target_gnu_type)
+install_preload_libs_dir := $(install_libs_dir)/preload
+$(install_preload_libs_dir) $(install_libs_dir):
+	mkdir -p $@
+install-glibc-%: $(patchelf_bin) $(install_preload_libs_dir)
+	if [ "$(glibc_cur_lib)" = "nptl/libpthread.so.0" ] || [ "$(glibc_cur_lib)" = "libc.so.6" ]; then \
+		$(patchelf_bin) \
+			--page-size "$$(( 16 * 1024 ))" \
+			--remap-symvers "GLIBC_2.27=GLIBC_2.0,GLIBC_2.2,GLIBC_2.2.1,GLIBC_2.2.2,GLIBC_2.2.3,GLIBC_2.2.4,GLIBC_2.2.6,GLIBC_2.3,GLIBC_2.3.2,GLIBC_2.3.3,GLIBC_2.3.4,GLIBC_2.4,GLIBC_2.5,GLIBC_2.6,GLIBC_2.7,GLIBC_2.8,GLIBC_2.9,GLIBC_2.10,GLIBC_2.11,GLIBC_2.12,GLIBC_2.13,GLIBC_2.14,GLIBC_2.15,GLIBC_2.16,GLIBC_2.17,GLIBC_2.18,GLIBC_2.19,GLIBC_2.20,GLIBC_2.21,GLIBC_2.22,GLIBC_2.23,GLIBC_2.24,GLIBC_2.25,GLIBC_2.26,GLIBC_2.27,GLIBC_2.28" \
+			--also-remap-verneed \
+			$(glibc_build_dir)/$(glibc_cur_lib) \
+			--output $(install_preload_libs_dir)/$(glibc_cur_lib_name); \
+	else \
+		install -Dvm644 $(glibc_build_dir)/$(glibc_cur_lib) \
+			-t $(install_preload_libs_dir)/; \
+	fi
+	$(patchelf_bin) \
+		--page-size "$$(( 16 * 1024 ))" \
+		--remap-symvers "GLIBC_2.36=GLIBC_2.27,GLIBC_2.28" \
+		--also-remap-verneed \
+		$(install_preload_libs_dir)/$(glibc_cur_lib_name)
+
+install-glibc-dummy-ldso:
+	$(CC) -shared \
+		$(host_cflags) \
+		$(host_ldflags) \
+		-x c /dev/null \
+		-o $(install_preload_libs_dir)/ld-linux-loongarch-lp64d.so.1 \
+		-Wl,--version-script -Wl,$(glibc_build_dir)/ld.map \
+		-nostdlib	
+
+install-glibc: $(glibc_libs_install_targets) $(install_preload_libs_dir) install-glibc-dummy-ldso
+	chmod 0644 $(install_preload_libs_dir)/*
+	chmod +x $(install_preload_libs_dir)/ld.so.1
+	mkdir -pv $(TMPDIR)/lib64
+	ln -sfvr $(install_preload_libs_dir)/ld.so.1 $(TMPDIR)/lib64/ld.so.1
+
+symlink-hostlibs: $(install_libs_dir) $(install_preload_libs_dir)
+	ln -sfv $(libdir)/libstdc++.so.6 $(install_preload_libs_dir)/
+
+build-patchelf:
+	$(MAKE) -C $(patchelf_build_dir) all $(NJOBS)
+
+patch-src: patch-src.patchelf patch-src.glibc
+
+patch-src.%:
+	cd $* && QUILT_PATCHES=../debian/patches/$* quilt push -a
+
+override_dh_clean: clean-patch clean-patchelf
+	dh_clean
+	rm -rf debian/build-dir
+
+override_dh_shlibdeps:
+	dh_shlibdeps -l /usr/lib/$(lol_target_gnu_type)/preload
+
+override_dh_gencontrol:
+	dh_gencontrol -- $(SUBSTVARS)
+
+override_dh_fixperms:
+	dh_fixperms -Xld.so.1
+
+clean-patchelf:
+	dh_autoreconf_clean
+
+clean-patch: clean-patch.patchelf clean-patch.glibc
+
+clean-patch.%:
+	if [ -s $*/.pc/applied-patches ]; then \
+		cd $* && QUILT_PATCHES=../debian/patches/$* quilt pop -q -a; \
+		rm -rf .pc; \
+	fi
+
+# dwz cannot handle our patched libs
+override_dh_dwz:
+	:
+
+.PHONY: get-orig-source patch-src clean-patch config-glibc config-patchelf
