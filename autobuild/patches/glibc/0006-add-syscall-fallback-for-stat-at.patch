@@ -1,21 +1,42 @@
-From e7fed5998191299cae27212dbabdaad6170cf32b Mon Sep 17 00:00:00 2001
+From 58396f14b1732fd25cb4ad965a9353f48e1b97f7 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 15:51:49 +0800
 Subject: [PATCH 06/10] add syscall fallback for *stat(at)?
 
 ---
+ sysdeps/unix/sysv/linux/loongarch/fstatat64.c | 13 ++++
  sysdeps/unix/sysv/linux/loongarch/fxstat64.c  | 67 ++++++++++++++++
  .../unix/sysv/linux/loongarch/fxstatat64.c    | 61 +++++++++++++++
  sysdeps/unix/sysv/linux/loongarch/lxstat64.c  | 77 +++++++++++++++++++
  .../unix/sysv/linux/loongarch/ow_syscall_nr.h |  2 +
  sysdeps/unix/sysv/linux/loongarch/xstat64.c   | 71 +++++++++++++++++
- 5 files changed, 278 insertions(+)
+ 6 files changed, 291 insertions(+)
+ create mode 100644 sysdeps/unix/sysv/linux/loongarch/fstatat64.c
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/fxstat64.c
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/fxstatat64.c
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/lxstat64.c
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/ow_syscall_nr.h
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/xstat64.c
 
+diff --git a/sysdeps/unix/sysv/linux/loongarch/fstatat64.c b/sysdeps/unix/sysv/linux/loongarch/fstatat64.c
+new file mode 100644
+index 00000000..a437eeaa
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/loongarch/fstatat64.c
+@@ -0,0 +1,13 @@
++#include <shlib-compat.h>
++
++#if LIB_COMPAT(libc, GLIBC_2_27, GLIBC_2_36)
++# include <kernel-features.h>
++# ifdef __ASSUME_STATX
++#  undef __ASSUME_STATX
++# endif
++// Hack: force use statx for fstatat64 even __NR_newfstatat is available
++# define STAT_HAS_TIME32
++# include "ow_syscall_nr.h"
++#endif
++
++#include <sysdeps/unix/sysv/linux/fstatat64.c>
 diff --git a/sysdeps/unix/sysv/linux/loongarch/fxstat64.c b/sysdeps/unix/sysv/linux/loongarch/fxstat64.c
 new file mode 100644
 index 00000000..f7174ea8
