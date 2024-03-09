@@ -1,7 +1,7 @@
-From 6b633be48edaedf1337da787a8da18eec0f0b151 Mon Sep 17 00:00:00 2001
+From 22b1ee5a1bd5bcf6ee76a535b649c65517fd6812 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 08:41:15 +0800
-Subject: [PATCH 07/10] add more pthread symbols
+Subject: [PATCH 07/12] add more pthread symbols
 
 ---
  nptl/old_pthread_cond_destroy.c            |  4 ++--
