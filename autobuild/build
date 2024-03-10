@@ -81,9 +81,25 @@ EOF
             --with-pkgversion="LibLoL $debver" \
 		    --with-bugurl="https://github.com/AOSC-Dev/liblol/issues"
 
+    local pthread_map="GLIBC_2.27=GLIBC_2.0,GLIBC_2.2,GLIBC_2.2.1,GLIBC_2.2.2,GLIBC_2.2.3,GLIBC_2.2.4,GLIBC_2.2.6,GLIBC_2.3,GLIBC_2.3.2,GLIBC_2.3.3,GLIBC_2.3.4,GLIBC_2.4,GLIBC_2.5,GLIBC_2.6,GLIBC_2.7,GLIBC_2.8,GLIBC_2.9,GLIBC_2.10,GLIBC_2.11,GLIBC_2.12,GLIBC_2.13,GLIBC_2.14,GLIBC_2.15,GLIBC_2.16,GLIBC_2.17,GLIBC_2.18,GLIBC_2.19,GLIBC_2.20,GLIBC_2.21,GLIBC_2.22,GLIBC_2.23,GLIBC_2.24,GLIBC_2.25,GLIBC_2.26,GLIBC_2.27,GLIBC_2.28"
+    local libc_map="GLIBC_2.36=GLIBC_2.27,GLIBC_2.28"
 
-    env -i "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" "PATH=$PATH" \
-        make "$PWD/libc.so.6"
+    for i in "libc.so.6" "linkobj/libc.so"; do
+        env -i "MAKEFLAGS=$MAKEFLAGS" "TERM=$TERM" "PATH=$PATH" \
+        make "$PWD/$i"
+
+        "$BLDDIR/build/patchelf/src/patchelf" \
+            --page-size "$(( 16 * 1024 ))" \
+            --remap-symvers "$pthread_map" \
+            --also-remap-verneed \
+            "$i"
+
+        "$BLDDIR/build/patchelf/src/patchelf" \
+            --page-size "$(( 16 * 1024 ))" \
+            --remap-symvers "$libc_map" \
+            --also-remap-verneed \
+            "$i"
+    done
 
     local libs=( \
         "elf/ld.so.1" \
@@ -93,13 +109,13 @@ EOF
         "nptl_db/libthread_db.so.1" \
         "locale/libBrokenLocale.so.1" \
         "crypt/libcrypt.so.1" \
-        "nis/libnsl.so.1" \
     )
     local merged_libs=( \
         "resolv/libanl.so.1" \
         "dlfcn/libdl.so.2" \
         "rt/librt.so.1" \
         "login/libutil.so.1" \
+        "nis/libnsl.so.1" \
     )
     local dir
     local lib
@@ -117,18 +133,16 @@ EOF
 
     abinfo "Patching Glibc libraries ..."
 
-    for i in "nptl/libpthread.so.0" "libc.so.6"; do
-        "$BLDDIR/build/patchelf/src/patchelf" \
-            --page-size "$(( 16 * 1024 ))" \
-            --remap-symvers "GLIBC_2.27=GLIBC_2.0,GLIBC_2.2,GLIBC_2.2.1,GLIBC_2.2.2,GLIBC_2.2.3,GLIBC_2.2.4,GLIBC_2.2.6,GLIBC_2.3,GLIBC_2.3.2,GLIBC_2.3.3,GLIBC_2.3.4,GLIBC_2.4,GLIBC_2.5,GLIBC_2.6,GLIBC_2.7,GLIBC_2.8,GLIBC_2.9,GLIBC_2.10,GLIBC_2.11,GLIBC_2.12,GLIBC_2.13,GLIBC_2.14,GLIBC_2.15,GLIBC_2.16,GLIBC_2.17,GLIBC_2.18,GLIBC_2.19,GLIBC_2.20,GLIBC_2.21,GLIBC_2.22,GLIBC_2.23,GLIBC_2.24,GLIBC_2.25,GLIBC_2.26,GLIBC_2.27,GLIBC_2.28" \
-            --also-remap-verneed \
-            "$i"
-    done
+    "$BLDDIR/build/patchelf/src/patchelf" \
+        --page-size "$(( 16 * 1024 ))" \
+        --remap-symvers "$pthread_map" \
+        --also-remap-verneed \
+        "nptl/libpthread.so.0"
 
-    for i in "libc.so.6" "${libs[@]}"; do
+    for i in "${libs[@]}"; do
         "$BLDDIR/build/patchelf/src/patchelf" \
             --page-size "$(( 16 * 1024 ))" \
-            --remap-symvers "GLIBC_2.36=GLIBC_2.27,GLIBC_2.28" \
+            --remap-symvers "$libc_map" \
             --also-remap-verneed \
             "$i"
     done
