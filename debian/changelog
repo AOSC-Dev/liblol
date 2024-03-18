@@ -4,6 +4,7 @@ liblol (0.1.5~pre6-1) unstable; urgency=medium
   * not promoting symbol versions of libnsl.so
   * use libxcrypt for libcrypto.so.1
   * fix wrong version mapping for libpthread symbols
+  * upgrade glibc to 2.39
 
  -- Miao Wang <shankerwangmiao@gmail.com>  Mon, 18 Mar 2024 10:43:00 +0800
 

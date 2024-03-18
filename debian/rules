@@ -3,7 +3,7 @@
 
 include /usr/share/dpkg/pkg-info.mk
 
-glibc-ver := 2.38
+glibc-ver := 2.39
 patchelf-ver := 0.18.0
 libxcrypt-ver := 4.4.36
 
