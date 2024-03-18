@@ -263,7 +263,8 @@ install_preload_libs_dir := $(install_libs_dir)/preload
 $(install_preload_libs_dir) $(install_libs_dir):
 	mkdir -p $@
 
-all-libs := $(libxcrypt_libs_targets) $(glibc_libs_targets) $(dummy_ld_so)
+all-libs-with-abi := $(libxcrypt_libs_targets) $(glibc_libs_targets)
+all-libs := $(all-libs-with-abi) $(dummy_ld_so)
 
 install-libs: $(addprefix $(install_preload_libs_dir)/, $(notdir $(all-libs))) $(TMPDIR)/lib64/ld.so.1
 	:
@@ -284,6 +285,74 @@ $(foreach lib-target, $(all-libs), $(eval $(call install-lib-rule,$(lib-target))
 symlink-hostlibs: $(install_libs_dir) $(install_preload_libs_dir)
 	ln -sfv $(libdir)/libstdc++.so.6 $(install_preload_libs_dir)/
 
+so_basename=$(foreach so,$(1),$(firstword $(subst ., ,$(notdir $(so)))))
+
+abi_checking_dir := debian/build-dir/abi
+actual_abi_targets := $(addprefix $(abi_checking_dir)/actual/,$(addsuffix .abilist,$(call so_basename,$(notdir $(all-libs-with-abi)))))
+nw_abi_dir := glibc/sysdeps/unix/sysv/linux/loongarch/lp64
+ow_abi_dir := debian/abiversions
+
+define gen-abilist
+	LC_ALL=C objdump --dynamic-syms "$(1)" | \
+		LC_ALL=C awk -f "glibc/scripts/abilist.awk"
+endef
+
+define gen-actual-abi-rule
+$(addprefix $(abi_checking_dir)/actual/,$(addsuffix .abilist,$(call so_basename,$(notdir $(1))))): $(1)
+	mkdir -p $$(dir $$@)
+	$(call gen-abilist,$(1)) > $$@
+endef
+
+$(foreach abi-target, $(all-libs-with-abi), $(eval $(call gen-actual-abi-rule,$(abi-target))))
+
+$(abi_checking_dir)/ow/libc.abilist: $(addprefix $(ow_abi_dir)/,$(addsuffix .abilist, $(call so_basename,$(glibc_merged_libs) libc.so.6)))
+	mkdir -p $(dir $@)
+	cat $^ > $@
+
+$(addprefix $(abi_checking_dir)/ow/,$(addsuffix .abilist, $(call so_basename,$(glibc_merged_libs)))):$(abi_checking_dir)/ow/%:$(ow_abi_dir)/%
+	mkdir -p $(dir $@)
+	cut -d" " -f 1 $< | uniq | \
+	 	sed 's/$$/ __'$(basename $(notdir $@))'_version_placeholder F/' \
+			>$@
+
+$(abi_checking_dir)/ow/%.abilist:
+	mkdir -p $(dir $@)
+	if [ -f $(ow_abi_dir)/$(notdir $@) ]; then \
+		cp $(ow_abi_dir)/$(notdir $@) $@; \
+	else \
+		touch $@; \
+	fi
+
+$(abi_checking_dir)/nw/%.abilist:
+	mkdir -p $(dir $@)
+	if [ -f $(nw_abi_dir)/$(notdir $@) ]; then \
+		cp $(nw_abi_dir)/$(notdir $@) $@; \
+	else \
+		touch $@; \
+	fi
+
+$(abi_checking_dir)/nw/libcrypt.abilist: debian/build-dir/libxcrypt-normal/.libs/libcrypt.so.1
+	mkdir -p $(dir $@)
+	$(call gen-abilist,$<) > $@
+
+$(abi_checking_dir)/expected/%.abilist: $(abi_checking_dir)/ow/%.abilist $(abi_checking_dir)/nw/%.abilist
+	mkdir -p $(dir $@)
+	cat $^ | sort | uniq > $@
+
+abi-check-%: $(abi_checking_dir)/expected/%.abilist $(abi_checking_dir)/actual/%.abilist $(abi_checking_dir)/actual/libc.abilist
+	missing=$$(bash -c "comm -23 $(word 1,$^) <(cat $(word 2,$^) $(word 3,$^) | sort | uniq)"); \
+	extra=$$(comm -13 $(word 1,$^) $(word 2,$^)); \
+	if [ "" != "$$missing" ]; then \
+		echo "Missing symbols in $(patsubst abi-check-%,%,$@): $$missing"; \
+		exit 1; \
+	fi; \
+	if [ "" != "$$extra" ]; then \
+		echo "Extra symbols in $(patsubst abi-check-%,%,$@): $$extra"; \
+	fi
+
+abi-check: | $(addprefix abi-check-,$(sort $(basename $(notdir $(wildcard $(nw_abi_dir)/*.abilist) $(wildcard $(ow_abi_dir)/*.abilist)))))
+	:
+
 $(patchelf_bin):
 	$(MAKE) -C $(patchelf_build_dir) all $(NJOBS)
 	[ -f $@ ]
@@ -293,9 +362,10 @@ patch-src: patch-src.patchelf patch-src.glibc
 patch-src.%:
 	cd $* && QUILT_PATCHES=../debian/patches/$* quilt push -a
 
-override_dh_auto_configure: patch-src config-glibc config-patchelf config-libxcrypt
+override_dh_auto_configure: patch-src config-glibc config-patchelf config-libxcrypt config-libxcrypt-normal
 override_dh_auto_build: $(all-libs)
 override_dh_auto_install: install-libs symlink-hostlibs
+override_dh_auto_test: abi-check
 
 override_dh_clean: clean-patch clean-patchelf
 	dh_clean

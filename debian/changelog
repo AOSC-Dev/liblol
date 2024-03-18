@@ -1,5 +1,6 @@
 liblol (0.1.5~pre6-1) unstable; urgency=medium
 
+  * add ABI checking
   * not promoting symbol versions of libnsl.so
   * use libxcrypt for libcrypto.so.1
   * fix wrong version mapping for libpthread symbols
