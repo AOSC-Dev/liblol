@@ -244,6 +244,11 @@ libxcrypt_build() {
         --remap-symvers "$libc_map" \
         ".libs/libcrypt.so.1"
 
+    "$BLDDIR/build/patchelf/src/patchelf" \
+        --page-size "$(( 16 * 1024 ))" \
+        --replace-needed "ld-linux-loongarch-lp64d.so.1" "ld.so.1" \
+        ".libs/libcrypt.so.1"
+
     abinfo "Installing Libxcrypt ..."
     install -Dvm644 ".libs/libcrypt.so.1" \
         -t "$PKGDIR$LOLPREFIX/support/lib/$OWTARGET/"

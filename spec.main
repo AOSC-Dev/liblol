@@ -1,4 +1,4 @@
-VER=0.1.5~pre4
+VER=0.1.5~pre5
 _mirror="http://pkg.loongnix.cn/loongnix"
 __GLIBC_VER=2.39
 __LIBXCRYPT_VER=4.4.36
