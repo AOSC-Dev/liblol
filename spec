@@ -2,7 +2,7 @@
 VER=0.1.7
 _mirror="http://pkg.loongnix.cn/loongnix"
 __GLIBC_VER=2.40
-__LIBXCRYPT_VER=4.4.37
+__LIBXCRYPT_VER=4.4.38
 
 SRCS="\
   file::rename=glibc.tar.xz::https://ftp.gnu.org/gnu/glibc/glibc-${__GLIBC_VER}.tar.xz \
