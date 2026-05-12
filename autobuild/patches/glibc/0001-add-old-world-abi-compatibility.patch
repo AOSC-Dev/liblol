@@ -1,7 +1,7 @@
-From 71a9c15c708f8c8bc58a9359c6e2d9704ebfd116 Mon Sep 17 00:00:00 2001
+From a88ec331676561fa50ffa8a872b4b53bc989cfab Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sat, 13 Jan 2024 03:23:48 +0800
-Subject: [PATCH 02/12] add old world abi compatibility
+Subject: [PATCH 01/11] add old world abi compatibility
 
 ---
  login/Makefile                                |   8 +-
@@ -18,7 +18,7 @@ Subject: [PATCH 02/12] add old world abi compatibility
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/statx_cp.c
 
 diff --git a/login/Makefile b/login/Makefile
-index d6a9a6975e..46cbc2763e 100644
+index edc95c0bde..067f19f206 100644
 --- a/login/Makefile
 +++ b/login/Makefile
 @@ -95,7 +95,7 @@ CFLAGS-tst-utmp-unsigned-64.c += -D_FILE_OFFSET_BITS=64 -D_TIME_BITS=64
@@ -44,10 +44,10 @@ index d6a9a6975e..46cbc2763e 100644
  include ../Rules
  
 diff --git a/nptl/Versions b/nptl/Versions
-index ef55376dd9..09c22f7290 100644
+index b813b675b9..42d4eb50f6 100644
 --- a/nptl/Versions
 +++ b/nptl/Versions
-@@ -536,3 +536,264 @@ ld {
+@@ -538,3 +538,264 @@ ld {
       __nptl_set_robust_list_avail;
    }
  }
@@ -335,7 +335,7 @@ index ccde4b59b4..16008b0858 100644
  }
  
 diff --git a/scripts/versions.awk b/scripts/versions.awk
-index 3365218445..57ff62c524 100644
+index a68059e79a..e612a1f096 100644
 --- a/scripts/versions.awk
 +++ b/scripts/versions.awk
 @@ -89,7 +89,7 @@ function ord(c) {
@@ -348,7 +348,7 @@ index 3365218445..57ff62c524 100644
  
  # Some targets do not set the ABI baseline for libdl.  As a result,
 diff --git a/sunrpc/Makefile b/sunrpc/Makefile
-index ca5311c41d..d0133505ad 100644
+index ed61002a68..e6ceebc381 100644
 --- a/sunrpc/Makefile
 +++ b/sunrpc/Makefile
 @@ -22,7 +22,7 @@ subdir	:= sunrpc
@@ -370,7 +370,7 @@ index ca5311c41d..d0133505ad 100644
  tests = tst-xdrmem tst-xdrmem2 tst-udp-error tst-udp-timeout \
    tst-udp-nonblocking tst-bug22542 tst-bug28768
 diff --git a/sysdeps/nptl/Makeconfig b/sysdeps/nptl/Makeconfig
-index b5f546bac1..4847f08584 100644
+index 0e205cbf91..fda8d8e9a5 100644
 --- a/sysdeps/nptl/Makeconfig
 +++ b/sysdeps/nptl/Makeconfig
 @@ -20,6 +20,7 @@
