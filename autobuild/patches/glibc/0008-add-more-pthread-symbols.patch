@@ -1,7 +1,7 @@
-From 7aea3ea89371a1ce24dd0bdd5df6a00307a4a69f Mon Sep 17 00:00:00 2001
+From 5d319c45b13abfb3419e754d9c2301c33f6a0789 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 08:41:15 +0800
-Subject: [PATCH 07/11] add more pthread symbols
+Subject: [PATCH 08/12] add more pthread symbols
 
 ---
  nptl/old_pthread_cond_destroy.c            |  4 ++--
@@ -448,7 +448,7 @@ index d69470002a..707787a67a 100644
  
  #endif
 diff --git a/sysdeps/unix/sysv/linux/loongarch/Makefile b/sysdeps/unix/sysv/linux/loongarch/Makefile
-index 1d447ea4b8..4d1d5d0e6d 100644
+index 26d4a4f227..2f2c08bc2b 100644
 --- a/sysdeps/unix/sysv/linux/loongarch/Makefile
 +++ b/sysdeps/unix/sysv/linux/loongarch/Makefile
 @@ -21,6 +21,10 @@ sysdep_routines += \
@@ -459,9 +459,9 @@ index 1d447ea4b8..4d1d5d0e6d 100644
 +sysdep-CFLAGS += -DCOMP_CHANGED_PTHREAD_STACK_MIN
 +endif
 +
- abi-variants := lp64s lp64d
+ abi-variants := ilp32s ilp32d lp64s lp64d
  
  ifeq (,$(filter $(default-abi),$(abi-variants)))
 -- 
-2.52.0
+2.55.0
 

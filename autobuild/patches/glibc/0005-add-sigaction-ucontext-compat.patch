@@ -1,7 +1,7 @@
-From 3c166614eb248d27f7fd7536e90c6572e1b4c037 Mon Sep 17 00:00:00 2001
+From 8fe829bdb08f38eb9b77d282c000acac709dd4a7 Mon Sep 17 00:00:00 2001
 From: Miao Wang <shankerwangmiao@gmail.com>
 Date: Sun, 14 Jan 2024 05:15:07 +0800
-Subject: [PATCH 04/11] add sigaction & ucontext compat
+Subject: [PATCH 05/12] add sigaction & ucontext compat
 
 ---
  sysdeps/unix/sysv/linux/loongarch/Makefile    |   8 +-
@@ -28,7 +28,7 @@ Subject: [PATCH 04/11] add sigaction & ucontext compat
  create mode 100644 sysdeps/unix/sysv/linux/loongarch/sigaction.c
 
 diff --git a/sysdeps/unix/sysv/linux/loongarch/Makefile b/sysdeps/unix/sysv/linux/loongarch/Makefile
-index 70cac2d36c..1d447ea4b8 100644
+index 6d0cae03e3..26d4a4f227 100644
 --- a/sysdeps/unix/sysv/linux/loongarch/Makefile
 +++ b/sysdeps/unix/sysv/linux/loongarch/Makefile
 @@ -1,5 +1,11 @@
@@ -45,7 +45,7 @@ index 70cac2d36c..1d447ea4b8 100644
  
  ifeq ($(subdir),signal)
 diff --git a/sysdeps/unix/sysv/linux/loongarch/getcontext.S b/sysdeps/unix/sysv/linux/loongarch/getcontext.S
-index f012e059d7..5f5eb10fc7 100644
+index 120738b7c9..338ea17511 100644
 --- a/sysdeps/unix/sysv/linux/loongarch/getcontext.S
 +++ b/sysdeps/unix/sysv/linux/loongarch/getcontext.S
 @@ -16,6 +16,7 @@
@@ -352,7 +352,7 @@ index 0000000000..5af4dd4d54
 +
 +UCONTEXT_SIZE			sizeof (__ow_ucontext_t)
 diff --git a/sysdeps/unix/sysv/linux/loongarch/setcontext.S b/sysdeps/unix/sysv/linux/loongarch/setcontext.S
-index e7189c0c41..c111de458c 100644
+index 269aca8026..5a2b75e741 100644
 --- a/sysdeps/unix/sysv/linux/loongarch/setcontext.S
 +++ b/sysdeps/unix/sysv/linux/loongarch/setcontext.S
 @@ -15,6 +15,8 @@
@@ -764,7 +764,7 @@ index 0000000000..6e370c338b
 +#endif
 +#endif
 diff --git a/sysdeps/unix/sysv/linux/loongarch/swapcontext.S b/sysdeps/unix/sysv/linux/loongarch/swapcontext.S
-index 905fc33a2e..ad21e1f075 100644
+index afa31e250b..d2c5215f67 100644
 --- a/sysdeps/unix/sysv/linux/loongarch/swapcontext.S
 +++ b/sysdeps/unix/sysv/linux/loongarch/swapcontext.S
 @@ -16,6 +16,7 @@
@@ -782,5 +782,5 @@ index 905fc33a2e..ad21e1f075 100644
 -weak_alias (__swapcontext, swapcontext)
 +versioned_symbol (libc, __swapcontext, swapcontext, GLIBC_2_36);
 -- 
-2.52.0
+2.55.0
 
