@@ -1,10 +1,10 @@
-VER=0.1.11
+VER=0.1.12
 __GLIBC_VER=2.44
 __LIBXCRYPT_VER=4.5.2
 
-# FIXME: ftpmirror.gnu.org is unstable as at 20260808
+# FIXME: ftp.gnu.org unstable
 SRCS="\
-  file::rename=glibc.tar.xz::https://mirrors.tuna.tsinghua.edu.cn/gnu/glibc/glibc-${__GLIBC_VER}.tar.xz\
+  file::rename=glibc.tar.xz::https://repo-hk.aosc.io/aosc-repacks/core14/glibc-${__GLIBC_VER}.tar.xz\
   file::rename=patchelf.tar.gz::https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0.tar.gz \
   file::rename=libxcrypt.tar.xz::https://github.com/besser82/libxcrypt/releases/download/v${__LIBXCRYPT_VER}/libxcrypt-${__LIBXCRYPT_VER}.tar.xz \
 "
